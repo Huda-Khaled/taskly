@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  /* ═══════════════════════════
+     COLORS
+  ═══════════════════════════ */
+
+  /* Action Blue */
+  --color-primary:           #003D9B;
+  --color-primary-container: #0052CC;
+  --color-surface-highest:   #D7E3FF;
+  --color-surface-low:       #F1F3FF;
+  --color-background:        #F9F9FF;
+
+  /* Slate Neutrals */
+  --color-slate-dark:  #041B3C;
+  --color-slate-mid:   #4F5F7B;
+  --color-slate-light: #C3C6D6;
+
+  /* Semantic */
+  --color-success:       #82F9BE;
+  --color-error:         #BA1A1A;
+  --color-error-surface: #FFDAD6;
+  --color-error-text:    #93000A;
+  --color-warning:       #FFB300;
+
+  /* ═══════════════════════════
+     TYPOGRAPHY
+  ═══════════════════════════ */
+
+  --font-sans: 'Inter', sans-serif;
+
+  --text-display-lg:        3.5rem;
+  --leading-display-lg:     3.5rem;
+  --tracking-display-lg:    -0.175rem;
+  --font-weight-display-lg: 700;
+
+  --text-headline-lg:        2rem;
+  --leading-headline-lg:     2.5rem;
+  --tracking-headline-lg:    0rem;
+  --font-weight-headline-lg: 600;
+
+  --text-title-md:        1.125rem;
+  --leading-title-md:     1.6875rem;
+  --tracking-title-md:    0rem;
+  --font-weight-title-md: 500;
+
+  --text-body-md:        0.875rem;
+  --leading-body-md:     1.422rem;
+  --tracking-body-md:    0rem;
+  --font-weight-body-md: 400;
+
+  --text-label-sm:        0.6875rem;
+  --leading-label-sm:     1.031rem;
+  --tracking-label-sm:    0.069rem;
+  --font-weight-label-sm: 700;
+  --shadow-button: 0px 1px 2px 0px rgb(0 0 0 / 0.05);
+}
+
+@layer utilities {
+  .text-display-lg  { font-size: var(--text-display-lg);  line-height: var(--leading-display-lg);  font-weight: var(--font-weight-display-lg);  letter-spacing: var(--tracking-display-lg); }
+  .text-headline-lg { font-size: var(--text-headline-lg); line-height: var(--leading-headline-lg); font-weight: var(--font-weight-headline-lg); letter-spacing: var(--tracking-headline-lg); }
+  .text-title-md    { font-size: var(--text-title-md);    line-height: var(--leading-title-md);    font-weight: var(--font-weight-title-md);    letter-spacing: var(--tracking-title-md); }
+  .text-body-md     { font-size: var(--text-body-md);     line-height: var(--leading-body-md);     font-weight: var(--font-weight-body-md);     letter-spacing: var(--tracking-body-md); }
+  .text-label-sm    { font-size: var(--text-label-sm);    line-height: var(--leading-label-sm);    font-weight: var(--font-weight-label-sm);    letter-spacing: var(--tracking-label-sm); text-transform: uppercase; }
+}
+
+body {
+  background-color: var(--color-background);
+  font-family: var(--font-sans);
+  color: var(--color-slate-dark);
+}
