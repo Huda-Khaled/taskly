@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -14,14 +13,15 @@ import {
   RESEND_SECONDS,
   MAX_TRIALS,
 } from '@/app/lib/validations/forgotPassword.schema';
-import LongArrow from '@/assets/icons/LongArrow.png';
-import EmailIcon from '@/assets/icons/Text.png';
-import TimerIcon from '@/assets/icons/Timer.png';
-import CheckIcon from '@/assets/icons/CheckIcon.png';
+import LongArrow from '@/assets/icons/LongArrow.svg';
+import TimerIcon from '@/assets/icons/Timer.svg';
+import CheckIcon from '@/assets/icons/CheckIcon.svg';
+import EmailIcon from '@/assets/icons/Text.svg';
+import { toast } from 'sonner';
 
 export function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  // const [serverError, setServerError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [trials, setTrials] = useState(0);
 
@@ -61,15 +61,20 @@ export function ForgotPasswordForm() {
   }, []);
 
   const onSubmit = async (data: ForgotPasswordFormSchema) => {
-    setServerError(null);
-    const result = await forgotPasswordAction({ email: data.email });
-    if (result.error) {
-      setServerError(result.error);
-      return;
+    try {
+      const result = await forgotPasswordAction({ email: data.email });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      setSubmitted(true);
+      setTrials((t) => t + 1);
+      startTimer();
+    } catch {
+      toast.error(
+        'No internet connection. Please check your network and try again.'
+      );
     }
-    setSubmitted(true);
-    setTrials((t) => t + 1);
-    startTimer();
   };
 
   const formatTime = (seconds: number) => {
@@ -94,12 +99,9 @@ export function ForgotPasswordForm() {
         type="email"
         error={errors.email?.message}
         {...register('email')}
-        endIcon={
-          <Image src={EmailIcon} alt="Email icon" width={20} height={20} />
-        }
+        endIcon={<EmailIcon width={20} height={20} />}
       />
-
-      {serverError && (
+      {/* {serverError && (
         <p
           role="alert"
           aria-live="assertive"
@@ -107,24 +109,21 @@ export function ForgotPasswordForm() {
         >
           {serverError}
         </p>
-      )}
-
+      )} */}
       <Button type="submit" variant="primary" disabled={submitDisabled}>
         {isSubmitting ? 'Sending...' : 'Send Reset Link'}
       </Button>
-
       <div className="flex justify-center">
         <Link
           href="/login"
           className=" text-primary font-medium flex items-center gap-1.5"
         >
           <span>
-            <Image src={LongArrow} alt="arrowicon" width={16} height={16} />
+            <LongArrow />
           </span>
           Back to log in
         </Link>
       </div>
-
       {submitted && (
         <div className="flex flex-col gap-4 mt-2">
           <div
@@ -132,7 +131,7 @@ export function ForgotPasswordForm() {
             aria-live="polite"
             className="flex items-start gap-3 rounded-lg p-4 bg-success/20"
           >
-            <Image src={CheckIcon} alt="Success icon" width={20} height={20} />
+            <CheckIcon width={20} height={20} />
             <p className="text-body-md text-slate-mid">
               If an account exists with this email, we&apos;ve sent a password
               reset link.
@@ -156,12 +155,7 @@ export function ForgotPasswordForm() {
             >
               {timeLeft > 0 ? (
                 <>
-                  <Image
-                    src={TimerIcon}
-                    alt="Timer icon"
-                    width={18}
-                    height={21}
-                  />
+                  <TimerIcon width={20} height={20} />
                   Resend in {formatTime(timeLeft)}
                 </>
               ) : (

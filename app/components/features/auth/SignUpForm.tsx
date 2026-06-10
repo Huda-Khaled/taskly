@@ -1,7 +1,7 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import Image from 'next/image';
+import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useWatch } from 'react-hook-form';
@@ -11,13 +11,13 @@ import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
 import { PasswordChecklist } from '@/app/components/ui/PasswordChecklist/PasswordChecklist';
 import { signUpAction } from '@/app/actions/auth/signup';
-import EyeIcon from '@/assets/icons/eye.png';
-import EyeOffIcon from '@/assets/icons/eyeoff.png';
+import EyeIcon from '@/assets/icons/eye.svg';
+import EyeOffIcon from '@/assets/icons/eyeoff.svg';
 import Link from 'next/link';
 
 export function SignUpForm() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
+  // const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -38,21 +38,26 @@ export function SignUpForm() {
   });
 
   const onSubmit = async (data: SignUpSchema) => {
-    setServerError(null);
+    try {
+      const result = await signUpAction({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        jobTitle: data.jobTitle,
+      });
 
-    const result = await signUpAction({
-      email: data.email,
-      password: data.password,
-      name: data.name,
-      jobTitle: data.jobTitle,
-    });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
 
-    if (result.error) {
-      setServerError(result.error);
-      return;
+      toast.success('Account created successfully!');
+      router.push('/project');
+    } catch {
+      toast.error(
+        'No internet connection. Please check your network and try again.'
+      );
     }
-
-    router.push('/project');
   };
 
   return (
@@ -112,12 +117,11 @@ export function SignUpForm() {
                   setShowConfirmPassword((prev) => !prev);
                 }}
               >
-                <Image
-                  src={showPassword ? EyeIcon : EyeOffIcon}
-                  alt={showPassword ? 'show password' : 'hide password'}
-                  width={20}
-                  height={20}
-                />
+                {showPassword ? (
+                  <EyeOffIcon width={20} height={20} />
+                ) : (
+                  <EyeIcon width={20} height={20} />
+                )}
               </button>
             }
           />
@@ -142,7 +146,7 @@ export function SignUpForm() {
       <div id="password-rules" aria-live="polite">
         <PasswordChecklist password={passwordValue} />
       </div>
-
+      {/* 
       {serverError && (
         <p
           role="alert"
@@ -151,7 +155,7 @@ export function SignUpForm() {
         >
           {serverError}
         </p>
-      )}
+      )} */}
 
       <Button type="submit" variant="primary" disabled={isSubmitting}>
         {isSubmitting ? 'Creating account...' : 'Create Account'}

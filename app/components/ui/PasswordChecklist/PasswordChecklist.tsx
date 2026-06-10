@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import Image from 'next/image';
-import CircleIcon from '@/assets/icons/Circle.png';
-import CheckCircleIcon from '@/assets/icons/RadioCircle.png';
+import CircleIcon from '@/assets/icons/Circle.svg';
+import CheckCircleIcon from '@/assets/icons/RadioCircle.svg';
 
 interface Rule {
   label: string;
@@ -39,12 +39,11 @@ export function PasswordChecklist({ password }: PasswordChecklistProps) {
           }`}
         >
           <span className="transition-all duration-300 shrink-0">
-            <Image
-              src={passed ? CheckCircleIcon : CircleIcon}
-              alt={passed ? 'passed' : 'not passed'}
-              width={16}
-              height={16}
-            />
+            {passed ? (
+              <CheckCircleIcon width={16} height={16} />
+            ) : (
+              <CircleIcon width={16} height={16} />
+            )}
           </span>
           <span className="text-body-md">{label}</span>
         </div>

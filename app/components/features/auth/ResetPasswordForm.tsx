@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,11 +9,12 @@ import Link from 'next/link';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
 import { resetPasswordAction } from '@/app/actions/auth/resetPassword';
-import EyeIcon from '@/assets/icons/eye.png';
-import EyeOffIcon from '@/assets/icons/eyeoff.png';
-import CheckIcon from '@/assets/icons/CheckIcon.png';
-import CircleCheck from '@/assets/icons/RadioCircle.png';
-import CircleEmpty from '@/assets/icons/Circle.png';
+import EyeIcon from '@/assets/icons/eye.svg';
+import EyeOffIcon from '@/assets/icons/eyeoff.svg';
+import CheckIcon from '@/assets/icons/CheckIcon.svg';
+import CircleCheck from '@/assets/icons/RadioCircle.svg';
+import CircleEmpty from '@/assets/icons/Circle.svg';
+import { toast } from 'sonner';
 
 const schema = z
   .object({
@@ -55,7 +55,7 @@ interface Props {
 
 export function ResetPasswordForm({ accessToken }: Props) {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
+  // const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -76,19 +76,22 @@ export function ResetPasswordForm({ accessToken }: Props) {
   });
 
   const onSubmit = async (data: FormSchema) => {
-    console.log('accessToken being sent:', accessToken);
-    setServerError(null);
-    const result = await resetPasswordAction({
-      password: data.password,
-      accessToken,
-    });
-    console.log('result:', result);
-    if (result.error) {
-      setServerError(result.error);
-      return;
+    try {
+      const result = await resetPasswordAction({
+        password: data.password,
+        accessToken,
+      });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      setSuccess(true);
+      setTimeout(() => router.push('/login'), 3000);
+    } catch {
+      toast.error(
+        'No internet connection. Please check your network and try again'
+      );
     }
-    setSuccess(true);
-    setTimeout(() => router.push('/login'), 3000);
   };
 
   if (success) {
@@ -98,7 +101,7 @@ export function ResetPasswordForm({ accessToken }: Props) {
         className="flex items-start gap-3 rounded-lg p-4 bg-success/20"
       >
         <span className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center ">
-          <Image src={CheckIcon} alt="Success icon" width={16} height={16} />
+          <CheckIcon width={16} height={16} />
         </span>
         <p className="text-body-md text-slate-mid">
           Your password has been updated successfully. You can now log in.
@@ -128,16 +131,7 @@ export function ResetPasswordForm({ accessToken }: Props) {
           className="absolute right-3 top-[2.1rem] text-slate-mid"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? (
-            <Image
-              src={EyeOffIcon}
-              alt="Hide password"
-              width={20}
-              height={20}
-            />
-          ) : (
-            <Image src={EyeIcon} alt="Show password" width={20} height={20} />
-          )}
+          {showPassword ? <EyeOffIcon width={20} height={20} /> : <EyeIcon />}
         </button>
       </div>
 
@@ -157,12 +151,11 @@ export function ResetPasswordForm({ accessToken }: Props) {
             const passed = passwordValue ? test(passwordValue) : false;
             return (
               <div key={label} className="flex items-center gap-2">
-                <Image
-                  src={passed ? CircleCheck : CircleEmpty}
-                  alt={passed ? 'passed' : 'not passed'}
-                  width={15}
-                  height={15}
-                />
+                {passed ? (
+                  <CircleCheck width={15} height={15} />
+                ) : (
+                  <CircleEmpty width={15} height={15} />
+                )}
                 <span
                   className={`text-body-sm ${passed ? '' : 'text-slate-mid'}`}
                 >
