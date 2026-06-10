@@ -6,21 +6,28 @@ export async function loginAction(data: {
   password: string;
   rememberMe: boolean;
 }) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-      },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-      }),
-    }
-  );
+  let res: Response;
+
+  try {
+    res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      }
+    );
+  } catch (error) {
+    console.log('catch hit:', error);
+    return { error: 'Network error. Please try again.' };
+  }
 
   if (!res.ok) {
     const err = await res.json();
@@ -44,6 +51,13 @@ export async function loginAction(data: {
   });
 
   cookieStore.set('refresh_token', refresh_token, {
+    httpOnly: true,
+    secure: true,
+    path: '/',
+    ...(maxAge && { maxAge }),
+  });
+
+  cookieStore.set('remember_me', String(data.rememberMe), {
     httpOnly: true,
     secure: true,
     path: '/',

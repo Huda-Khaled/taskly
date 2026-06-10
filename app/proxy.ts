@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')?.value;
   const refreshToken = request.cookies.get('refresh_token')?.value;
-
+  const rememberMe = request.cookies.get('remember_me')?.value === 'true';
   const isLoginPage = request.nextUrl.pathname === '/login';
+  const THIRTY_DAYS = 60 * 60 * 24 * 30;
+  const maxAge = rememberMe ? THIRTY_DAYS : undefined;
 
   if (!accessToken && !refreshToken) {
     if (isLoginPage) return NextResponse.next();
@@ -32,24 +35,22 @@ export async function middleware(request: NextRequest) {
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('access_token');
       response.cookies.delete('refresh_token');
+      response.cookies.delete('remember_me');
       return response;
     }
 
     const { access_token, refresh_token: newRefreshToken } = await res.json();
-
     const response = NextResponse.next();
 
-    response.cookies.set('access_token', access_token, {
+    const cookieOptions = {
       httpOnly: true,
       secure: true,
       path: '/',
-    });
+      ...(maxAge && { maxAge }),
+    };
 
-    response.cookies.set('refresh_token', newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      path: '/',
-    });
+    response.cookies.set('access_token', access_token, cookieOptions);
+    response.cookies.set('refresh_token', newRefreshToken, cookieOptions);
 
     return response;
   }
@@ -58,5 +59,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|sign-up).*)'],
+  matcher: ['/((?!_next/static|_next/image|login|sign-up).*)'],
 };

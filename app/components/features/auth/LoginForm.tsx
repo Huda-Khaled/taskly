@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, type Resolver, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -8,19 +8,19 @@ import { loginSchema, type LoginSchema } from '@/app/lib/validations/auth';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
 import { loginAction } from '@/app/actions/auth/login';
+import { toast } from 'sonner';
 import Link from 'next/link';
-import Image from 'next/image';
-import EmailIcon from '@/assets/icons/Text.png';
-import EyeIcon from '@/assets/icons/eye.png';
-import EyeOffIcon from '@/assets/icons/eyeoff.png';
+import EmailIcon from '@/assets/icons/Text.svg';
+import EyeIcon from '@/assets/icons/eye.svg';
+import EyeOffIcon from '@/assets/icons/eyeoff.svg';
 
 export function LoginForm() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginSchema>({
@@ -30,20 +30,25 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginSchema) => {
-    setServerError(null);
+    try {
+      const result = await loginAction({
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe,
+      });
 
-    const result = await loginAction({
-      email: data.email,
-      password: data.password,
-      rememberMe: data.rememberMe,
-    });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
 
-    if (result.error) {
-      setServerError(result.error);
-      return;
+      toast.success('Logged in successfully!');
+      router.push('/');
+    } catch {
+      toast.error(
+        'No internet connection. Please check your network and try again.'
+      );
     }
-
-    router.push('/');
   };
 
   return (
@@ -60,9 +65,7 @@ export function LoginForm() {
         aria-required="true"
         aria-invalid={!!errors.email}
         {...register('email')}
-        endIcon={
-          <Image src={EmailIcon} alt="Email icon" width={20} height={20} />
-        }
+        endIcon={<EmailIcon width={20} height={20} />}
       />
 
       <Input
@@ -79,12 +82,11 @@ export function LoginForm() {
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            <Image
-              src={showPassword ? EyeOffIcon : EyeIcon}
-              alt={showPassword ? 'Hide password' : 'Show password'}
-              width={20}
-              height={20}
-            />
+            {showPassword ? (
+              <EyeOffIcon width={20} height={20} />
+            ) : (
+              <EyeIcon width={20} height={20} />
+            )}
           </button>
         }
         labelAction={
@@ -98,14 +100,21 @@ export function LoginForm() {
       />
 
       <div className="hidden md:flex items-center justify-between">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            {...register('rememberMe')}
-            className="w-4 h-4 accent-primary"
-          />
-          <span className="text-body-md text-slate-mid">Remember me</span>
-        </label>
+        <Controller
+          name="rememberMe"
+          control={control}
+          render={({ field }) => (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <span className="text-body-md text-slate-mid">Remember me</span>
+            </label>
+          )}
+        />
 
         <Link
           href="/forgot-password"
@@ -116,16 +125,23 @@ export function LoginForm() {
       </div>
 
       <div className="flex md:hidden items-center">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            {...register('rememberMe')}
-            className="w-4 h-4 accent-primary"
-          />
-          <span className="text-body-md text-slate-mid">Remember me</span>
-        </label>
+        <Controller
+          name="rememberMe"
+          control={control}
+          render={({ field }) => (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <span className="text-body-md text-slate-mid">Remember me</span>
+            </label>
+          )}
+        />
       </div>
-
+      {/* 
       {serverError && (
         <p
           role="alert"
@@ -134,8 +150,7 @@ export function LoginForm() {
         >
           {serverError}
         </p>
-      )}
-
+      )} */}
       <Button type="submit" variant="primary" disabled={isSubmitting}>
         {isSubmitting ? 'Logging in...' : 'Log In'}
       </Button>
