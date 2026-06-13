@@ -59,11 +59,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {hint && !error && (
-          <span className="text-label-sm text-slate-light">{hint}</span>
+          <span className="text-label-sm text-slate-light text-start">
+            {hint}
+          </span>
         )}
 
         {error && (
-          <span className="text-label-sm text-error-text">{error}</span>
+          <span className="text-label-sm text-error-text text-start">
+            {error}
+          </span>
         )}
       </div>
     );

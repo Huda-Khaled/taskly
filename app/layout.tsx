@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import StoreProvider from './StoreProvider';
 import { Toaster } from 'sonner';
 import './globals.css';
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Taskly',
   description: 'Taskly App',
   icons: {
-    icon: '/Logo.png',
+    icon: '/Logo.svg',
   },
 };
 
@@ -24,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        {children}
+        <StoreProvider>{children}</StoreProvider>
         <Toaster
           position="top-center"
           toastOptions={{

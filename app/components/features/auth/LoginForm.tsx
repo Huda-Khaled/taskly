@@ -43,7 +43,7 @@ export function LoginForm() {
       }
 
       toast.success('Logged in successfully!');
-      router.push('/');
+      router.push('/project');
     } catch {
       toast.error(
         'No internet connection. Please check your network and try again.'
