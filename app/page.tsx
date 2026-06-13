@@ -22,6 +22,13 @@ export default function RootPage() {
       router.replace(
         `/reset-password#error=${error}&error_description=${errorDescription}`
       );
+    } else {
+      const token = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('access_token='))
+        ?.split('=')[1];
+
+      router.replace(token ? '/project' : '/login');
     }
   }, [router]);
 

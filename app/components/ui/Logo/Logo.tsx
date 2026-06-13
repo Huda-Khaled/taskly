@@ -1,9 +1,16 @@
-import Image from 'next/image';
-export default function Logo() {
+import LogoIcon from '@/public/Logo.svg';
+interface LogoProps {
+  collapsed?: boolean;
+}
+export default function Logo({ collapsed = false }: LogoProps) {
   return (
     <div className="flex items-center gap-2">
-      <Image src="/Logo.png" alt="logo" width={18} height={20} priority />
-      <span className="text-logo  color-slate-dark">TASKLY</span>
+      <LogoIcon width={18} height={20} />
+      <span
+        className={`text-logo color-slate-dark ${collapsed ? 'lg:hidden' : ''}`}
+      >
+        TASKLY
+      </span>
     </div>
   );
 }

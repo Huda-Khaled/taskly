@@ -15,6 +15,10 @@ export async function proxy(request: NextRequest) {
   }
 
   if (accessToken) {
+    if (request.nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL('/project', request.url));
+    }
+
     return NextResponse.next();
   }
 
@@ -59,5 +63,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|login|sign-up).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|login|sign-up|forgot-password|reset-password).*)',
+  ],
 };

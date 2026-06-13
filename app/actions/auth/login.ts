@@ -71,5 +71,5 @@ export async function loginAction(data: {
     ...(maxAge && { maxAge }),
   });
 
-  return { success: true };
+  return { success: true, redirectTo: '/project' };
 }
