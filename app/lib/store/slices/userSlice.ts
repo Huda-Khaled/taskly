@@ -22,35 +22,48 @@ const initialState: UserState = {
   error: null,
 };
 
-export const fetchUser = createAsyncThunk<User, string>(
-  'user/fetchUser',
-  async (userId, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`/api/users/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch user');
-      return (await response.json()) as User;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
-  }
-);
-
-export const updateUser = createAsyncThunk<
+export const fetchUser = createAsyncThunk<
   User,
-  Partial<User> & { id: string }
->('user/updateUser', async (userData, { rejectWithValue }) => {
+  string,
+  { rejectValue: string }
+>('user/fetchUser', async (userId, { rejectWithValue }) => {
   try {
-    const response = await fetch(`/api/users/${userData.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    if (!response.ok) throw new Error('Failed to update user');
+    const response = await fetch(`/api/users/${userId}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+
     return (await response.json()) as User;
   } catch (error) {
     return rejectWithValue((error as Error).message);
   }
 });
+
+export const updateUser = createAsyncThunk<
+  User,
+  Partial<User> & { id: string },
+  { rejectValue: string }
+>('user/updateUser', async (userData, { rejectWithValue }) => {
+  try {
+    const response = await fetch(`/api/users/${userData.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update user');
+    }
+
+    return (await response.json()) as User;
+  } catch (error) {
+    return rejectWithValue((error as Error).message);
+  }
+});
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -73,6 +86,7 @@ const userSlice = createSlice({
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchUser.pending, (state) => {
@@ -86,10 +100,12 @@ const userSlice = createSlice({
       })
       .addCase(fetchUser.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload as string;
+        state.error = action.payload ?? 'Failed to fetch user';
       })
+
       .addCase(updateUser.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(updateUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
@@ -97,10 +113,11 @@ const userSlice = createSlice({
       })
       .addCase(updateUser.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.payload as string;
+        state.error = action.payload ?? 'Failed to update user';
       });
   },
 });
 
 export const { setUser, clearUser, clearUserError } = userSlice.actions;
+
 export default userSlice.reducer;
