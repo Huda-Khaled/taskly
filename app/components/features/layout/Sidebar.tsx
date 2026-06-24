@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import Logo from '@/app/components/ui/Logo/Logo';
 import { Button } from '@/app/components/ui/Button/Button';
 import ProjectsIcon from '@/assets/icons/Projects.svg';
@@ -22,11 +22,11 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { label: 'Projects', href: '/project', icon: ProjectsIcon },
-  { label: 'Project Epics', href: '/epics', icon: EpicsIcon },
-  { label: 'Project Tasks', href: '/tasks', icon: TasksIcon },
-  { label: 'Project Members', href: '/members', icon: MembersIcon },
-  { label: 'Project Details', href: '/details', icon: DetailsIcon },
+  { label: 'Projects', segment: '', icon: ProjectsIcon },
+  { label: 'Project Epics', segment: 'epics', icon: EpicsIcon },
+  { label: 'Project Tasks', segment: 'tasks', icon: TasksIcon },
+  { label: 'Project Members', segment: 'members', icon: MembersIcon },
+  { label: 'Project Details', segment: 'details', icon: DetailsIcon },
 ];
 
 export function Sidebar({
@@ -36,8 +36,19 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const params = useParams<{ projectId?: string }>();
+
+  const projectId =
+    typeof params?.projectId === 'string' ? params.projectId : undefined;
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  function buildHref(segment: string) {
+    if (!projectId) return '/project';
+    return `/project/${projectId}${segment ? `/${segment}` : ''}`;
+  }
+  const visibleItems = NAV_ITEMS.filter((item) => !item.segment || projectId);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -72,21 +83,27 @@ export function Sidebar({
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div
-          className={`flex h-16 shrink-0 items-center gap-2 border-slate-light px-4 ${
+          className={`flex h-16 shrink-0 items-center gap-2 px-4 ${
             isCollapsed ? 'lg:justify-center' : ''
           }`}
         >
           <Logo collapsed={isCollapsed} />
         </div>
+
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-4">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
+          {visibleItems.map((item) => {
+            const href = buildHref(item.segment);
             const Icon = item.icon;
+
+            const isActive =
+              item.segment === ''
+                ? pathname === '/project'
+                : pathname.includes(`/${item.segment}`);
 
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={item.segment || 'projects'}
+                href={href}
                 onClick={onCloseMobile}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-body-md transition-colors ${
                   isActive
@@ -102,6 +119,7 @@ export function Sidebar({
             );
           })}
         </nav>
+
         <div className="flex flex-col gap-1 p-2">
           <Button
             variant="sidebar"
@@ -110,7 +128,9 @@ export function Sidebar({
             className={`hidden lg:flex ${isCollapsed ? 'justify-center' : ''}`}
           >
             <ArrowIcon
-              className={`shrink-0 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+              className={`transition-transform ${
+                isCollapsed ? 'rotate-180' : ''
+              }`}
             />
             <span className={isCollapsed ? 'hidden' : ''}>Collapse</span>
           </Button>
@@ -121,7 +141,7 @@ export function Sidebar({
             disabled={isLoggingOut}
             className={isCollapsed ? 'lg:justify-center' : ''}
           >
-            <LogoutIcon className="shrink-0" />
+            <LogoutIcon />
             <span className={isCollapsed ? 'lg:hidden' : ''}>
               {isLoggingOut ? 'Logging out…' : 'Logout'}
             </span>

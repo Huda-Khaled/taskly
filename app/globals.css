@@ -56,7 +56,7 @@
   --font-weight-label-sm: 700;
 
   --shadow-button: 0px 1px 2px 0px;
---shadow-container: 0px 24px 48px 0px #041B3C0F;
+  --shadow-container: 0px 24px 48px 0px #041B3C0F;
 }
 
 @layer utilities {
@@ -88,13 +88,14 @@
   }
 }
 }
-.text-logo { 
-  font-size: 20px; 
-  line-height: 28px; 
-  font-weight: 700; 
-  letter-spacing: -0.5px; 
-  font-style: bold;
+
+.text-logo {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
+
 .text-hint {
   font-size: 16px;
   line-height: 100%;
@@ -102,16 +103,20 @@
   letter-spacing: 0px;
   color: #737685;
 }
+
 .password-checklist {
   width: 480px;
-  max-width: 100%; 
+  max-width: 100%;
   min-height: 98px;
   background-color: #E8EDFF;
-;
   border-radius: 8px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 7.5px;
   opacity: 1;
+}
+
+.skeleton {
+  background-color: var(--color-slate-light);
 }

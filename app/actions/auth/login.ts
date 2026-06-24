@@ -24,8 +24,7 @@ export async function loginAction(data: {
         }),
       }
     );
-  } catch (error) {
-    console.log('catch hit:', error);
+  } catch {
     return { error: 'Network error. Please try again.' };
   }
 
