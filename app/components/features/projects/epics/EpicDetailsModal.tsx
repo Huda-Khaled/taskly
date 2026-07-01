@@ -17,6 +17,7 @@ import TasksIcon from '@/assets/icons/TasksIcon.svg';
 import PlusIcon from '@/assets/icons/PlusIcon.svg';
 import EpicIcon from '@/assets/icons/EpicIcon.svg';
 import { MemberAvatar } from '@/app/components/features/projects/members/MemberAvatar';
+import Link from 'next/dist/client/link';
 
 interface EpicDetailsModalProps {
   projectId: string;
@@ -234,12 +235,13 @@ export function EpicDetailsModal({
                 <p className="text-body-md text-slate-mid">
                   No tasks have been added to this epic yet
                 </p>
-                <Button variant="primary">
-                  <span className="flex items-center gap-2">
-                    <PlusIcon width={14} height={14} aria-hidden="true" />
-                    Add Task
-                  </span>
-                </Button>
+                <Link
+                  href={`/project/${projectId}/tasks/new?epicId=${epic.id}`}
+                  className="flex items-center gap-1.5 text-label-sm font-semibold text-primary"
+                >
+                  <PlusIcon width={14} height={14} aria-hidden="true" />
+                  Add Task
+                </Link>
               </div>
             </div>
           </div>
