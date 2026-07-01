@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import Image from 'next/image';
 import CircleIcon from '@/assets/icons/Circle.svg';
 import CheckCircleIcon from '@/assets/icons/RadioCircle.svg';
 

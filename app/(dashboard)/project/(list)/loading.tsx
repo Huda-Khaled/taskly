@@ -8,7 +8,7 @@ export default function ProjectsLoading() {
           <h1 className="text-headline-lg text-slate-dark">Projects</h1>
           <p className="text-hint mt-1">Manage and curate your projects</p>
         </div>
-        <div className="hidden lg:block w-44 h-10 rounded-lg bg-slate-200 animate-pulse" />
+        <div className="hidden lg:block w-44 h-10 rounded-lg bg-slate-light animate-pulse" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
