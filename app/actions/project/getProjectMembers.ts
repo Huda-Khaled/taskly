@@ -15,6 +15,7 @@ interface RawProjectMember {
 
 export interface ProjectMember {
   id: string;
+  userId: string;
   name: string;
   email: string;
   role: MemberRole;
@@ -29,6 +30,7 @@ export type ProjectMembersResult =
 function normalizeMember(raw: RawProjectMember): ProjectMember {
   return {
     id: raw.member_id,
+    userId: raw.user_id,
     name: raw.metadata?.name?.trim() || raw.email,
     email: raw.email,
     role: raw.role,

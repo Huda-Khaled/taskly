@@ -1,17 +1,21 @@
 'use client';
-import { forwardRef, TextareaHTMLAttributes } from 'react';
+import { forwardRef, TextareaHTMLAttributes, ReactNode } from 'react';
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   hint?: string;
   error?: string;
+  labelAction?: ReactNode;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, hint, error, className, ...rest }, ref) => {
+  ({ label, hint, error, labelAction, className, ...rest }, ref) => {
     return (
       <div className="flex flex-col gap-[0.406rem]">
-        <label className="text-label-sm text-slate-mid">{label}</label>
+        <div className="flex items-center justify-between">
+          <label className="text-label-sm text-slate-mid">{label}</label>
+          {labelAction && <div>{labelAction}</div>}
+        </div>
 
         <textarea
           ref={ref}

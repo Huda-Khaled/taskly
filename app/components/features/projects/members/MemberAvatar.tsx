@@ -1,10 +1,12 @@
 interface MemberAvatarProps {
   name: string;
+  size?: number; // px, defaults to 36
+  radius?: number; // px, defaults to 4 (rounded-sm)
 }
 
 const palette = [
   { bg: 'bg-surface-highest', text: 'text-primary' },
-  { bg: 'bg-success/50', text: 'text-slate-dark' },
+  { bg: 'bg-success', text: 'text-slate-dark' },
 ] as const;
 
 function getInitials(name: string): string {
@@ -15,18 +17,32 @@ function getInitials(name: string): string {
 }
 
 function getPaletteIndex(name: string): number {
-  const sum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const safeName = name ?? '';
+  const sum = safeName
+    .split('')
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return sum % palette.length;
 }
 
-export function MemberAvatar({ name }: MemberAvatarProps) {
+export function MemberAvatar({
+  name,
+  size = 36,
+  radius = 4,
+}: MemberAvatarProps) {
   const initials = getInitials(name);
   const color = palette[getPaletteIndex(name)];
 
   return (
     <div
       aria-hidden="true"
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-xs font-bold ${color.bg} ${color.text}`}
+      className={`flex shrink-0 items-center justify-center text-xs font-bold ${color.bg} ${color.text}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        paddingTop: 6,
+        paddingBottom: 7,
+      }}
     >
       {initials}
     </div>

@@ -45,8 +45,9 @@ export function Sidebar({
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
   function buildHref(segment: string) {
+    if (!segment) return '/project';
     if (!projectId) return '/project';
-    return `/project/${projectId}${segment ? `/${segment}` : ''}`;
+    return `/project/${projectId}/${segment}`;
   }
   const visibleItems = NAV_ITEMS.filter((item) => !item.segment || projectId);
 

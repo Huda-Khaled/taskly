@@ -1,0 +1,54 @@
+'use server';
+
+import { cookies } from 'next/headers';
+
+export interface UpdateEpicInput {
+  title?: string;
+  description?: string | null;
+  assignee_id?: string | null;
+  deadline?: string | null;
+}
+
+export async function updateEpicAction(epicId: string, data: UpdateEpicInput) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('access_token')?.value;
+
+  if (!accessToken) {
+    return { error: 'Unauthorized. Please login again.' };
+  }
+
+  let res: Response;
+
+  try {
+    res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/epics?id=eq.${epicId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${accessToken}`,
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(data),
+      }
+    );
+  } catch {
+    return { error: 'Network error. Please try again.' };
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    return {
+      error: err?.message || err?.error_description || 'Something went wrong',
+    };
+  }
+
+  const updated = await res.json();
+
+  if (!updated?.length) {
+    return { error: 'Epic not found' };
+  }
+
+  return { success: true, epic: updated[0] };
+}

@@ -5,6 +5,7 @@ import { Button } from '@/app/components/ui/Button/Button';
 import PlusIcon from '@/assets/icons/Plus.svg';
 import { getProjects } from '@/app/actions/project/getProject';
 import { EmptyProjects } from '@/app/components/features/projects/EmptyProjects';
+import { ErrorState } from '@/app/components/features/projects/ErrorProjects';
 import { Pagination } from '@/app/components/ui/Pagination/Pagination';
 import { ProjectsGrid } from '@/app/components/features/projects/ProjectsGrid';
 
@@ -25,7 +26,7 @@ export default async function ProjectPage({
   const result = await getProjects(accessToken, { limit: PAGE_SIZE, offset });
 
   if (result.status === 'unauthorized') redirect('/login');
-  if (result.status === 'error') throw new Error('Failed to load projects');
+  if (result.status === 'error') return <ErrorState />;
 
   const { data: projects, totalCount } = result;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

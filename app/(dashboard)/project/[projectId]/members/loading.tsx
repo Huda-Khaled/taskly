@@ -37,7 +37,6 @@ export default function MembersLoading() {
                 <div className="h-6 w-6 rounded bg-slate-light animate-pulse shrink-0" />
               </div>
 
-              {/* Desktop Row */}
               <div className="hidden lg:grid grid-cols-[1fr_160px_72px] items-center gap-4 px-6 py-4">
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-full bg-slate-light animate-pulse shrink-0" />
