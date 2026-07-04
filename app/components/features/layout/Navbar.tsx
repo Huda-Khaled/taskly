@@ -5,14 +5,16 @@ import { Button } from '@/app/components/ui/Button/Button';
 import MenuIcon from '@/assets/icons/menu.svg';
 import { getInitials } from '@/app/lib/utils/getInitials';
 import { logoutAction } from '@/app/actions/auth/logout';
-
+import { useAppSelector } from '@/app/lib/store/hooks';
+import { selectUser } from '@/app/lib/store/slices/userSelectors';
 interface NavbarProps {
-  name: string;
-  jobTitle: string;
   onOpenMobileMenu: () => void;
 }
 
-export function Navbar({ name, jobTitle, onOpenMobileMenu }: NavbarProps) {
+export function Navbar({ onOpenMobileMenu }: NavbarProps) {
+  const user = useAppSelector(selectUser);
+  const name = user?.name ?? '';
+  const jobTitle = user?.role ?? '';
   const initials = getInitials(name);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);

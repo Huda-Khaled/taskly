@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { getProjectById } from '@/app/actions/project/getProject';
 import { getProjectMembers } from '@/app/actions/project/getProjectMembers';
 import { getEpicsForSelect } from '@/app/actions/tasks/getEpicsForSelect';
@@ -19,11 +18,7 @@ export default async function NewTaskPage({
   const { epicId } = await searchParams;
 
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get('access_token')?.value;
-
-  if (!accessToken) {
-    redirect('/login');
-  }
+  const accessToken = cookieStore.get('access_token')!.value;
 
   const [projectResult, membersResult, epics] = await Promise.all([
     getProjectById(accessToken, projectId),

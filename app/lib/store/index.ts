@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './slices/userSlice';
+import type { UserState } from './slices/userSlice';
 
-export const makeStore = () => {
+export const makeStore = (preloadedState?: { user: UserState }) => {
   return configureStore({
     reducer: {
       user: userReducer,
     },
+    preloadedState,
     devTools: process.env.NODE_ENV !== 'production',
   });
 };

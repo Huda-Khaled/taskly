@@ -119,7 +119,7 @@ export function CreateTaskForm({
     >
       <div className="flex flex-col gap-[0.406rem]">
         <label htmlFor="title" className="text-label-sm text-slate-mid">
-          Title <span className="text-error-text">*</span>
+          Title
         </label>
         <input
           id="title"
