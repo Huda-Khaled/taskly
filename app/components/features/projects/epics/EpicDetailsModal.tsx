@@ -210,17 +210,18 @@ export function EpicDetailsModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-title-md text-slate-dark">Tasks</h3>
-                  <span className="rounded-sm bg-surface-low px-2 py-0.5 text-label-sm text-slate-mid">
+                  <span className="md:hidden rounded-sm bg-surface-low px-2 py-0.5 text-label-sm text-slate-mid">
                     0 TASKS
                   </span>
                 </div>
-                <button
+                <Link
+                  href={`/project/${projectId}/tasks/new?epicId=${epic.id}`}
                   type="button"
                   className="flex items-center gap-1.5 text-label-sm font-semibold text-primary"
                 >
                   <PlusIcon width={14} height={14} aria-hidden="true" />
                   Add Task
-                </button>
+                </Link>
               </div>
 
               <div className="flex flex-col items-center gap-4 rounded-sm border border-dashed border-slate-light bg-surface-low p-8 text-center">

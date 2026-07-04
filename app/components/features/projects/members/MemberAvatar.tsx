@@ -1,7 +1,7 @@
 interface MemberAvatarProps {
   name: string;
-  size?: number; // px, defaults to 36
-  radius?: number; // px, defaults to 4 (rounded-sm)
+  size?: number;
+  radius?: number;
 }
 
 const palette = [
