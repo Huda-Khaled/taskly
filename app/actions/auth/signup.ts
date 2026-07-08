@@ -9,25 +9,22 @@ export async function signUpAction(data: {
   let res: Response;
 
   try {
-    res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+    res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        data: {
+          name: data.name,
+          job_title: data.jobTitle ?? '',
         },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-          data: {
-            name: data.name,
-            job_title: data.jobTitle ?? '',
-          },
-        }),
-      }
-    );
+      }),
+    });
   } catch {
     return { error: 'Network error. Please try again.' };
   }

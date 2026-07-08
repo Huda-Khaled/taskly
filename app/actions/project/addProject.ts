@@ -16,22 +16,19 @@ export async function addProjectAction(data: {
   let res: Response;
 
   try {
-    res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          Authorization: `Bearer ${accessToken}`,
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description || null,
-        }),
-      }
-    );
+    res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${accessToken}`,
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        name: data.name,
+        description: data.description || null,
+      }),
+    });
   } catch {
     return { error: 'Network error. Please try again.' };
   }

@@ -20,7 +20,7 @@ export async function getProjects(
   { limit = 9, offset = 0 }: GetProjectsParams = {}
 ): Promise<ProjectsResult> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/get_projects?limit=${limit}&offset=${offset}`,
+    `${process.env.SUPABASE_URL}/rest/v1/rpc/get_projects?limit=${limit}&offset=${offset}`,
     {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -60,7 +60,7 @@ export async function getProjectById(
   id: string
 ): Promise<ProjectResult> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${id}&select=*`,
+    `${process.env.SUPABASE_URL}/rest/v1/projects?id=eq.${id}&select=*`,
     {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,

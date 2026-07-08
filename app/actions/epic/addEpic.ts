@@ -31,7 +31,7 @@ export async function addEpicAction(data: AddEpicInput) {
   let res: Response;
 
   try {
-    res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/epics`, {
+    res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/epics`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

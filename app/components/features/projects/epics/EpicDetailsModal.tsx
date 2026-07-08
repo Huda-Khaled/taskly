@@ -8,16 +8,14 @@ import { EditableTitle } from './EditableTitle';
 import { EditableDescription } from './EditableDescription';
 import { EditableAssignee } from './EditableAssignee';
 import { EditableDeadline } from './EditableDeadline';
+import { EpicTasksSection } from './EpicTasksSection';
 import { fetchSingleEpic } from '@/app/actions/epic/Fetchepicdetails';
 import type { ProjectEpic } from '@/app/actions/epic/getEpics';
 import type { ProjectMember } from '@/app/actions/project/getProjectMembers';
 import CloseIcon from '@/assets/icons/CloseIcon.svg';
 import CalendarIcon from '@/assets/icons/CalendarIcon.svg';
-import TasksIcon from '@/assets/icons/TasksIcon.svg';
-import PlusIcon from '@/assets/icons/PlusIcon.svg';
 import EpicIcon from '@/assets/icons/EpicIcon.svg';
 import { MemberAvatar } from '@/app/components/features/projects/members/MemberAvatar';
-import Link from 'next/dist/client/link';
 
 interface EpicDetailsModalProps {
   projectId: string;
@@ -206,45 +204,7 @@ export function EpicDetailsModal({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-title-md text-slate-dark">Tasks</h3>
-                  <span className="md:hidden rounded-sm bg-surface-low px-2 py-0.5 text-label-sm text-slate-mid">
-                    0 TASKS
-                  </span>
-                </div>
-                <Link
-                  href={`/project/${projectId}/tasks/new?epicId=${epic.id}`}
-                  type="button"
-                  className="flex items-center gap-1.5 text-label-sm font-semibold text-primary"
-                >
-                  <PlusIcon width={14} height={14} aria-hidden="true" />
-                  Add Task
-                </Link>
-              </div>
-
-              <div className="flex flex-col items-center gap-4 rounded-sm border border-dashed border-slate-light bg-surface-low p-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-surface-highest">
-                  <TasksIcon
-                    width={18}
-                    height={18}
-                    className="text-primary"
-                    aria-hidden="true"
-                  />
-                </div>
-                <p className="text-body-md text-slate-mid">
-                  No tasks have been added to this epic yet
-                </p>
-                <Link
-                  href={`/project/${projectId}/tasks/new?epicId=${epic.id}`}
-                  className="flex items-center gap-1.5 text-label-sm font-semibold text-primary"
-                >
-                  <PlusIcon width={14} height={14} aria-hidden="true" />
-                  Add Task
-                </Link>
-              </div>
-            </div>
+            <EpicTasksSection projectId={projectId} epicId={epic.id} />
           </div>
         </div>
       )}

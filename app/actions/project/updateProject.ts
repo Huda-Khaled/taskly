@@ -20,7 +20,7 @@ export async function updateProjectAction(
 
   try {
     res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/projects?id=eq.${id}`,
+      `${process.env.SUPABASE_URL}/rest/v1/projects?id=eq.${id}`,
       {
         method: 'PATCH',
         headers: {
