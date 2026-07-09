@@ -4,10 +4,17 @@ import { getProjectMembers } from '@/app/actions/project/getProjectMembers';
 import { getEpicsForSelect } from '@/app/actions/tasks/getEpicsForSelect';
 import { CreateTaskHeader } from '@/app/components/features/projects/tasks/CreateTaskHeader';
 import { CreateTaskForm } from '@/app/components/features/projects/tasks/CreateTaskForm';
+import { TASK_STATUSES, type TaskStatus } from '@/app/lib/validations/task';
 
 interface NewTaskPageProps {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ epicId?: string }>;
+  searchParams: Promise<{ epicId?: string; status?: string }>;
+}
+
+function parseInitialStatus(status?: string): TaskStatus | undefined {
+  return TASK_STATUSES.includes(status as TaskStatus)
+    ? (status as TaskStatus)
+    : undefined;
 }
 
 export default async function NewTaskPage({
@@ -15,7 +22,7 @@ export default async function NewTaskPage({
   searchParams,
 }: NewTaskPageProps) {
   const { projectId } = await params;
-  const { epicId } = await searchParams;
+  const { epicId, status } = await searchParams;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')!.value;
@@ -39,6 +46,7 @@ export default async function NewTaskPage({
         members={members}
         epics={epics}
         initialEpicId={epicId}
+        initialStatus={parseInitialStatus(status)}
       />
     </div>
   );

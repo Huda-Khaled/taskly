@@ -25,6 +25,7 @@ interface CreateTaskFormProps {
   members: ProjectMember[];
   epics: EpicSelectOption[];
   initialEpicId?: string;
+  initialStatus?: TaskStatus;
 }
 
 const MAX_EPIC_TITLE_LENGTH = 100;
@@ -47,6 +48,7 @@ export function CreateTaskForm({
   members,
   epics,
   initialEpicId,
+  initialStatus,
 }: CreateTaskFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +68,7 @@ export function CreateTaskForm({
       epicId: initialEpicId ?? '',
       assigneeId: '',
       dueDate: '',
-      status: 'TO_DO',
+      status: initialStatus ?? 'TO_DO',
     },
   });
 

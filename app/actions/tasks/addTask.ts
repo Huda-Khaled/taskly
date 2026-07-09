@@ -21,10 +21,8 @@ export async function addTaskAction(data: AddTaskInput) {
     return { error: 'Unauthorized. Please login again.' };
   }
 
-  let res: Response;
-
   try {
-    res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/tasks`, {
+    const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,22 +40,28 @@ export async function addTaskAction(data: AddTaskInput) {
         status: data.status || 'TO_DO',
       }),
     });
-  } catch {
-    return { error: 'Network error. Please try again.' };
-  }
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+
+      return {
+        error: err?.message || err?.error_description || 'Something went wrong',
+      };
+    }
+
+    const created = await res.json();
+
+    if (!created?.length) {
+      return { error: 'Something went wrong' };
+    }
+
     return {
-      error: err?.message || err?.error_description || 'Something went wrong',
+      success: true,
+      task: created[0],
+    };
+  } catch {
+    return {
+      error: 'Network error. Please try again.',
     };
   }
-
-  const created = await res.json();
-
-  if (!created?.length) {
-    return { error: 'Something went wrong' };
-  }
-
-  return { success: true, task: created[0] };
 }

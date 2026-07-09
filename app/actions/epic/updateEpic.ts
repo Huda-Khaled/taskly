@@ -21,7 +21,7 @@ export async function updateEpicAction(epicId: string, data: UpdateEpicInput) {
 
   try {
     res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/epics?id=eq.${epicId}`,
+      `${process.env.SUPABASE_URL}/rest/v1/epics?id=eq.${epicId}`,
       {
         method: 'PATCH',
         headers: {

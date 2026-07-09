@@ -2,6 +2,7 @@ interface MemberAvatarProps {
   name: string;
   size?: number;
   radius?: number;
+  fontSize?: number;
 }
 
 const palette = [
@@ -24,19 +25,26 @@ function getPaletteIndex(name: string): number {
   return sum % palette.length;
 }
 
+function getFontSize(size: number): number {
+  return Math.max(8, Math.round(size * 0.4));
+}
+
 export function MemberAvatar({
   name,
   size = 36,
   radius = 4,
+  fontSize,
 }: MemberAvatarProps) {
   const initials = getInitials(name);
   const color = palette[getPaletteIndex(name)];
+  const resolvedFontSize = fontSize ?? getFontSize(size);
 
   return (
     <div
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center text-xs font-bold ${color.bg} ${color.text}`}
+      className={`flex shrink-0 items-center justify-center font-bold ${color.bg} ${color.text}`}
       style={{
+        fontSize: resolvedFontSize,
         width: size,
         height: size,
         borderRadius: radius,

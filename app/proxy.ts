@@ -24,12 +24,12 @@ export async function proxy(request: NextRequest) {
 
   if (!accessToken && refreshToken) {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+      `${process.env.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          apikey: process.env.SUPABASE_ANON_KEY!,
         },
         body: JSON.stringify({ refresh_token: refreshToken }),
       }

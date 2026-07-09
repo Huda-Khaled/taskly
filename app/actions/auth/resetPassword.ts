@@ -7,7 +7,7 @@ export async function resetPasswordAction(data: {
   let res: Response;
 
   try {
-    res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
+    res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

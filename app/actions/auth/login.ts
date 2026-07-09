@@ -10,7 +10,7 @@ export async function loginAction(data: {
 
   try {
     res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      `${process.env.SUPABASE_URL}/auth/v1/token?grant_type=password`,
       {
         method: 'POST',
         headers: {

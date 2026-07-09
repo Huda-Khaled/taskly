@@ -43,7 +43,7 @@ export async function getProjectMembers(
   projectId: string
 ): Promise<ProjectMembersResult> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/get_project_members?project_id=eq.${projectId}`,
+    `${process.env.SUPABASE_URL}/rest/v1/get_project_members?project_id=eq.${projectId}`,
     {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
