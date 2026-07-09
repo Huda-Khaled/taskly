@@ -48,9 +48,7 @@ function TaskRow({ task }: { task: EpicTask }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-surface-low px-5 py-4 last:border-b-0">
       <div className="flex flex-col gap-1.5">
-        <span className=" font-medium text-slate-dark">
-          {task.title}
-        </span>
+        <span className=" font-medium text-slate-dark">{task.title}</span>
 
         <div className="flex items-center gap-2">
           {isAssigned ? (
@@ -61,9 +59,7 @@ function TaskRow({ task }: { task: EpicTask }) {
                 fontSize={8}
                 radius={12}
               />
-              <span className="text-slate-dark/60">
-                {task.assignee!.name}
-              </span>
+              <span className="text-slate-dark/60">{task.assignee!.name}</span>
             </>
           ) : (
             <>

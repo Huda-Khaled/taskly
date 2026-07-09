@@ -21,12 +21,5 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const name = user.user_metadata?.name ?? '';
-  const jobTitle = user.user_metadata?.job_title ?? '';
-
-  return (
-    <DashboardShell name={name} jobTitle={jobTitle}>
-      {children}
-    </DashboardShell>
-  );
+  return <DashboardShell>{children}</DashboardShell>;
 }
