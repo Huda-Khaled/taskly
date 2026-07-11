@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 import { TaskBoard } from './TaskBoard';
+import { TasksListView } from './TasksListView';
 import SearchIcon from '@/assets/icons/SearchIcon.svg';
 import GridIcon from '@/assets/icons/GridIconB.svg';
 import ArrowDownIcon from '@/assets/icons/ArrowDown.svg';
 import FilterIcon from '@/assets/icons/FilterIcon.svg';
-
+import ListIcon from '@/assets/icons/ListIcon.svg';
 interface TasksWorkboardProps {
   projectId: string;
   projectName: string;
@@ -51,8 +52,8 @@ export function TasksWorkboard({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
+            <div className="relative w-full sm:w-72">
               <SearchIcon
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-mid"
                 width={16}
@@ -64,43 +65,56 @@ export function TasksWorkboard({
                 type="text"
                 placeholder="Search tasks..."
                 disabled
-                className="h-11 w-72 rounded-sm bg-surface-highest pl-10 pr-4 text-body-md text-slate-dark placeholder:text-slate-mid"
+                className="h-11 w-full rounded-sm bg-surface-highest pl-10 pr-4 text-body-md text-slate-dark placeholder:text-slate-mid"
               />
             </div>
 
-            <div className="relative">
-              <GridIcon
-                width={18}
-                height={18}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-mid"
-                aria-hidden="true"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 sm:flex-none">
+                {view === 'board' ? (
+                  <GridIcon
+                    width={18}
+                    height={18}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-mid"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <ListIcon
+                    width={18}
+                    height={18}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-mid"
+                    aria-hidden="true"
+                  />
+                )}
 
-              <select
-                value={view}
-                onChange={(e) => handleViewChange(e.target.value as ViewOption)}
-                aria-label="Switch view"
-                className="h-11 min-w-42.5 appearance-none rounded-sm border border-surface-low bg-white pl-10 pr-10 text-body-md font-medium text-slate-dark"
+                <select
+                  value={view}
+                  onChange={(e) =>
+                    handleViewChange(e.target.value as ViewOption)
+                  }
+                  aria-label="Switch view"
+                  className="h-11 w-full appearance-none rounded-sm border border-surface-low bg-white pl-10 pr-10 text-body-md font-medium text-slate-dark sm:w-42.5"
+                >
+                  <option value="board">Board View</option>
+                  <option value="list">List View</option>
+                </select>
+
+                <ArrowDownIcon
+                  width={16}
+                  height={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-mid"
+                  aria-hidden="true"
+                />
+              </div>
+
+              <button
+                type="button"
+                aria-label="Filter tasks"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-surface-highest text-white transition-opacity hover:opacity-90"
               >
-                <option value="board">Board View</option>
-                <option value="list">List View</option>
-              </select>
-
-              <ArrowDownIcon
-                width={16}
-                height={16}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-mid"
-                aria-hidden="true"
-              />
+                <FilterIcon width={18} height={18} aria-hidden="true" />
+              </button>
             </div>
-
-            <button
-              type="button"
-              aria-label="Filter tasks"
-              className="flex h-11 w-11 items-center justify-center rounded-sm bg-surface-highest text-white transition-opacity hover:opacity-90"
-            >
-              <FilterIcon width={18} height={18} aria-hidden="true" />
-            </button>
           </div>
         </div>
       </div>
@@ -108,9 +122,7 @@ export function TasksWorkboard({
       {view === 'board' ? (
         <TaskBoard projectId={projectId} />
       ) : (
-        <p className="rounded-sm bg-surface-low p-8 text-center text-body-md text-slate-mid">
-          List view is coming soon.
-        </p>
+        <TasksListView projectId={projectId} />
       )}
     </div>
   );
