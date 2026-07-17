@@ -6,10 +6,12 @@ import type { TaskStatus } from '@/app/lib/validations/task';
 
 export async function fetchTasksByStatus(
   projectId: string,
-  status: TaskStatus
+  status: TaskStatus,
+  offset: number,
+  limit: number
 ) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value ?? '';
 
-  return getTasksByStatus(accessToken, projectId, status);
+  return getTasksByStatus(accessToken, projectId, status, { limit, offset });
 }

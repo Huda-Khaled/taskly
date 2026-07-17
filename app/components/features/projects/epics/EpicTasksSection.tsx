@@ -12,6 +12,7 @@ import UnassignedIcon from '@/assets/icons/UnassignedIcon.svg';
 interface EpicTasksSectionProps {
   projectId: string;
   epicId: string;
+  onTaskClick: (taskId: string) => void;
 }
 
 function formatDueDate(dateString: string): string {
@@ -42,11 +43,20 @@ function TaskRowSkeleton() {
   );
 }
 
-function TaskRow({ task }: { task: EpicTask }) {
+function TaskRow({
+  task,
+  onTaskClick,
+}: {
+  task: EpicTask;
+  onTaskClick: (taskId: string) => void;
+}) {
   const isAssigned = Boolean(task.assignee?.name?.trim());
 
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-surface-low px-5 py-4 last:border-b-0">
+    <div
+      onClick={() => onTaskClick(task.id)}
+      className="flex cursor-pointer items-start justify-between gap-3 border-b border-surface-low px-5 py-4 last:border-b-0 hover:bg-surface-low/50"
+    >
       <div className="flex flex-col gap-1.5">
         <span className=" font-medium text-slate-dark">{task.title}</span>
 
@@ -89,7 +99,11 @@ function TaskRow({ task }: { task: EpicTask }) {
   );
 }
 
-export function EpicTasksSection({ projectId, epicId }: EpicTasksSectionProps) {
+export function EpicTasksSection({
+  projectId,
+  epicId,
+  onTaskClick,
+}: EpicTasksSectionProps) {
   const [tasks, setTasks] = useState<EpicTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -181,7 +195,7 @@ export function EpicTasksSection({ projectId, epicId }: EpicTasksSectionProps) {
       {!isLoading && !hasError && tasks.length > 0 && (
         <div className="flex flex-col overflow-hidden rounded-lg border border-surface-low">
           {tasks.map((task) => (
-            <TaskRow key={task.id} task={task} />
+            <TaskRow key={task.id} task={task} onTaskClick={onTaskClick} />
           ))}
         </div>
       )}

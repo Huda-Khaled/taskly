@@ -3,6 +3,7 @@ import { TaskBoardColumn } from './TaskBoardColumn';
 
 interface TaskBoardProps {
   projectId: string;
+  onTaskClick: (taskId: string) => void;
 }
 
 interface StatusConfig {
@@ -54,7 +55,7 @@ const STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   },
 };
 
-export function TaskBoard({ projectId }: TaskBoardProps) {
+export function TaskBoard({ projectId, onTaskClick }: TaskBoardProps) {
   return (
     <div className="flex gap-6 overflow-x-auto pb-4">
       {TASK_STATUSES.map((status) => {
@@ -68,6 +69,7 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
             label={config.label}
             dotClass={config.dotClass}
             accentClass={config.accentClass}
+            onTaskClick={onTaskClick}
           />
         );
       })}

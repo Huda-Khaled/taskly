@@ -54,16 +54,20 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-dark/40 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-dark/40 sm:items-center sm:p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className={`max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-sm bg-white shadow-container ${className}`}
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[#EEF0F3] shadow-container sm:max-w-lg sm:rounded-sm ${className}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="h-1 w-10 rounded-full bg-surface-highest" />
+        </div>
+
         {children}
       </div>
     </div>,

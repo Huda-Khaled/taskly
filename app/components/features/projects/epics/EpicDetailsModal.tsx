@@ -9,6 +9,7 @@ import { EditableDescription } from './EditableDescription';
 import { EditableAssignee } from './EditableAssignee';
 import { EditableDeadline } from './EditableDeadline';
 import { EpicTasksSection } from './EpicTasksSection';
+import { TaskDetailsModal } from '@/app/components/features/projects/tasks/TaskDetailsModal';
 import { fetchSingleEpic } from '@/app/actions/epic/Fetchepicdetails';
 import type { ProjectEpic } from '@/app/actions/epic/getEpics';
 import type { ProjectMember } from '@/app/actions/project/getProjectMembers';
@@ -40,6 +41,7 @@ export function EpicDetailsModal({
   const [epic, setEpic] = useState<ProjectEpic | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   function handleClose() {
     router.back();
@@ -204,10 +206,20 @@ export function EpicDetailsModal({
               </div>
             </div>
 
-            <EpicTasksSection projectId={projectId} epicId={epic.id} />
+            <EpicTasksSection
+              projectId={projectId}
+              epicId={epic.id}
+              onTaskClick={setSelectedTaskId}
+            />
           </div>
         </div>
       )}
+
+      <TaskDetailsModal
+        projectId={projectId}
+        taskId={selectedTaskId}
+        onClose={() => setSelectedTaskId(null)}
+      />
     </Modal>
   );
 }

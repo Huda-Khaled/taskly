@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 import { TaskBoard } from './TaskBoard';
 import { TasksListView } from './TasksListView';
+import { TaskDetailsModal } from './TaskDetailsModal';
 import SearchIcon from '@/assets/icons/SearchIcon.svg';
 import GridIcon from '@/assets/icons/GridIconB.svg';
 import ArrowDownIcon from '@/assets/icons/ArrowDown.svg';
 import FilterIcon from '@/assets/icons/FilterIcon.svg';
 import ListIcon from '@/assets/icons/ListIcon.svg';
+
 interface TasksWorkboardProps {
   projectId: string;
   projectName: string;
@@ -25,6 +27,7 @@ export function TasksWorkboard({
 }: TasksWorkboardProps) {
   const router = useRouter();
   const [view, setView] = useState<ViewOption>(initialView);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   function handleViewChange(nextView: ViewOption) {
     setView(nextView);
@@ -70,7 +73,8 @@ export function TasksWorkboard({
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="relative flex-1 sm:flex-none">
+              {/* View switcher: board view isn't available on mobile, so hide the select there */}
+              <div className="relative hidden flex-1 sm:block sm:flex-none">
                 {view === 'board' ? (
                   <GridIcon
                     width={18}
@@ -110,7 +114,7 @@ export function TasksWorkboard({
               <button
                 type="button"
                 aria-label="Filter tasks"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-surface-highest text-white transition-opacity hover:opacity-90"
+                className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-surface-highest text-white transition-opacity hover:opacity-90 sm:flex"
               >
                 <FilterIcon width={18} height={18} aria-hidden="true" />
               </button>
@@ -119,11 +123,33 @@ export function TasksWorkboard({
         </div>
       </div>
 
-      {view === 'board' ? (
-        <TaskBoard projectId={projectId} />
-      ) : (
-        <TasksListView projectId={projectId} />
-      )}
+      {/* Mobile: always infinite-scroll cards, regardless of desktop view state */}
+      <div className="sm:hidden">
+        <TasksListView
+          projectId={projectId}
+          onTaskClick={setSelectedTaskId}
+          mode="infinite"
+        />
+      </div>
+
+      {/* Desktop: board (with per-column infinite scroll) or classic-paginated table */}
+      <div className="hidden sm:block">
+        {view === 'board' ? (
+          <TaskBoard projectId={projectId} onTaskClick={setSelectedTaskId} />
+        ) : (
+          <TasksListView
+            projectId={projectId}
+            onTaskClick={setSelectedTaskId}
+            mode="pagination"
+          />
+        )}
+      </div>
+
+      <TaskDetailsModal
+        projectId={projectId}
+        taskId={selectedTaskId}
+        onClose={() => setSelectedTaskId(null)}
+      />
     </div>
   );
 }

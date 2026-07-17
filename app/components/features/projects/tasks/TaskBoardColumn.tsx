@@ -6,6 +6,7 @@ import { MemberAvatar } from '@/app/components/features/projects/members/MemberA
 import { fetchTasksByStatus } from '@/app/actions/tasks/fetchTasksByStatus';
 import type { EpicTask } from '@/app/actions/tasks/getEpicTasks';
 import type { TaskStatus } from '@/app/lib/validations/task';
+import { useInfiniteScroll } from '@/app/hooks/useInfiniteScroll';
 import PlusIcon from '@/assets/icons/PlusIcon.svg';
 import CalendarIcon from '@/assets/icons/CalendarIcon.svg';
 
@@ -15,7 +16,10 @@ interface TaskBoardColumnProps {
   label: string;
   dotClass: string;
   accentClass: string;
+  onTaskClick: (taskId: string) => void;
 }
+
+const PAGE_SIZE = 20;
 
 interface DueDateMeta {
   label: string;
@@ -61,15 +65,18 @@ function TaskCardSkeleton() {
 function TaskCard({
   task,
   accentClass,
+  onTaskClick,
 }: {
   task: EpicTask;
   accentClass: string;
+  onTaskClick: (taskId: string) => void;
 }) {
   const dueMeta = getDueDateMeta(task.due_date);
 
   return (
     <div
-      className={`flex flex-col gap-3 rounded-sm border-l-2 bg-white p-3 shadow-container ${accentClass}`}
+      onClick={() => onTaskClick(task.id)}
+      className={`flex cursor-pointer flex-col gap-3 rounded-sm border-l-2 bg-white p-3 shadow-container ${accentClass}`}
     >
       <p className="text-body-md text-slate-dark">{task.title}</p>
 
@@ -99,32 +106,42 @@ export function TaskBoardColumn({
   label,
   dotClass,
   accentClass,
+  onTaskClick,
 }: TaskBoardColumnProps) {
   const [tasks, setTasks] = useState<EpicTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [hasInitialError, setHasInitialError] = useState(false);
 
   useEffect(() => {
     let isCancelled = false;
 
     async function load() {
-      setIsLoading(true);
-      setHasError(false);
+      setIsInitialLoading(true);
+      setHasInitialError(false);
+      setTasks([]);
+      setTotalCount(0);
 
       try {
-        const result = await fetchTasksByStatus(projectId, status);
+        const result = await fetchTasksByStatus(
+          projectId,
+          status,
+          0,
+          PAGE_SIZE
+        );
 
         if (isCancelled) return;
 
         if (result.status === 'ok') {
           setTasks(result.data);
+          setTotalCount(result.totalCount);
         } else {
-          setHasError(true);
+          setHasInitialError(true);
         }
       } catch {
-        if (!isCancelled) setHasError(true);
+        if (!isCancelled) setHasInitialError(true);
       } finally {
-        if (!isCancelled) setIsLoading(false);
+        if (!isCancelled) setIsInitialLoading(false);
       }
     }
 
@@ -134,6 +151,31 @@ export function TaskBoardColumn({
       isCancelled = true;
     };
   }, [projectId, status]);
+
+  const {
+    sentinelRef,
+    isLoading: isLoadingMore,
+    hasError: hasLoadMoreError,
+    retry,
+  } = useInfiniteScroll({
+    hasMore: tasks.length < totalCount,
+    onLoadMore: async () => {
+      const result = await fetchTasksByStatus(
+        projectId,
+        status,
+        tasks.length,
+        PAGE_SIZE
+      );
+
+      if (result.status !== 'ok') {
+        return { status: 'error' };
+      }
+
+      setTasks((prev) => [...prev, ...result.data]);
+      setTotalCount(result.totalCount);
+      return { status: 'ok' };
+    },
+  });
 
   const newTaskHref = `/project/${projectId}/tasks/new?status=${status}`;
 
@@ -149,7 +191,7 @@ export function TaskBoardColumn({
             {label}
           </span>
           <span className="rounded-sm bg-surface-low px-1.5 py-0.5 text-label-sm text-slate-mid">
-            {isLoading ? '-' : tasks.length}
+            {isInitialLoading ? '-' : totalCount}
           </span>
         </div>
 
@@ -171,30 +213,55 @@ export function TaskBoardColumn({
       </Link>
 
       <div className="flex flex-col gap-3">
-        {isLoading && (
+        {isInitialLoading && (
           <>
             <TaskCardSkeleton />
             <TaskCardSkeleton />
           </>
         )}
 
-        {!isLoading && hasError && (
+        {!isInitialLoading && hasInitialError && (
           <p className="rounded-sm bg-error-surface p-3 text-center text-label-sm text-error-text">
             Failed to load tasks
           </p>
         )}
 
-        {!isLoading && !hasError && tasks.length === 0 && (
+        {!isInitialLoading && !hasInitialError && tasks.length === 0 && (
           <p className="rounded-sm border border-dashed border-slate-light p-3 text-center text-label-sm text-slate-light">
             No tasks
           </p>
         )}
 
-        {!isLoading &&
-          !hasError &&
+        {!isInitialLoading &&
+          !hasInitialError &&
           tasks.map((task) => (
-            <TaskCard key={task.id} task={task} accentClass={accentClass} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              accentClass={accentClass}
+              onTaskClick={onTaskClick}
+            />
           ))}
+
+        {!isInitialLoading && !hasInitialError && tasks.length < totalCount && (
+          <div ref={sentinelRef} className="h-1" />
+        )}
+
+        {isLoadingMore && <TaskCardSkeleton />}
+
+        {hasLoadMoreError && (
+          <div className="flex flex-col items-center gap-2 py-2">
+            <p className="text-center text-label-sm text-error-text">
+              Failed to load more tasks
+            </p>
+            <button
+              onClick={retry}
+              className="text-label-sm text-primary underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

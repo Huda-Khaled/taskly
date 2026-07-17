@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/Button/Button';
 import { MemberAvatar } from '@/app/components/features/projects/members/MemberAvatar';
+import { Pagination } from '@/app/components/ui/Pagination/Pagination';
+import { useInfiniteScroll } from '@/app/hooks/useInfiniteScroll';
 import { fetchProjectTasks } from '@/app/actions/tasks/fetchProjectTasks';
 import type { ProjectTaskListItem } from '@/app/actions/tasks/getProjectTasks';
 import type { TaskStatus } from '@/app/lib/validations/task';
@@ -13,9 +15,13 @@ import UnassignedIcon from '@/assets/icons/UnassignedIcon.svg';
 
 interface TasksListViewProps {
   projectId: string;
+  onTaskClick: (taskId: string) => void;
+  /** 'pagination' = desktop table w/ classic pages. 'infinite' = mobile cards w/ scroll. */
+  mode?: 'pagination' | 'infinite';
 }
 
-const PAGE_SIZE = 10;
+const DESKTOP_PAGE_SIZE = 10;
+const MOBILE_PAGE_SIZE = 10;
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   TO_DO: 'To Do',
@@ -90,12 +96,43 @@ function TaskCardSkeleton() {
   );
 }
 
-export function TasksListView({ projectId }: TasksListViewProps) {
-  const router = useRouter();
+export function TasksListView({
+  projectId,
+  onTaskClick,
+  mode = 'pagination',
+}: TasksListViewProps) {
+  if (mode === 'infinite') {
+    return <MobileTaskList projectId={projectId} onTaskClick={onTaskClick} />;
+  }
+
+  return <DesktopTaskTable projectId={projectId} onTaskClick={onTaskClick} />;
+}
+
+// ---------------------------------------------------------------------------
+// Desktop: classic pagination
+// ---------------------------------------------------------------------------
+
+function DesktopTaskTable({
+  projectId,
+  onTaskClick,
+}: {
+  projectId: string;
+  onTaskClick: (taskId: string) => void;
+}) {
   const [tasks, setTasks] = useState<ProjectTaskListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  // Reset to page 1 whenever the project changes — done during render
+  // (not in an effect) to avoid the extra reset-then-refetch render pass.
+  const [trackedProjectId, setTrackedProjectId] = useState(projectId);
+
+  if (projectId !== trackedProjectId) {
+    setTrackedProjectId(projectId);
+    setPage(1);
+  }
 
   useEffect(() => {
     let isCancelled = false;
@@ -105,7 +142,12 @@ export function TasksListView({ projectId }: TasksListViewProps) {
       setHasError(false);
 
       try {
-        const result = await fetchProjectTasks(projectId, 0, PAGE_SIZE);
+        const offset = (page - 1) * DESKTOP_PAGE_SIZE;
+        const result = await fetchProjectTasks(
+          projectId,
+          offset,
+          DESKTOP_PAGE_SIZE
+        );
 
         if (isCancelled) return;
 
@@ -127,15 +169,241 @@ export function TasksListView({ projectId }: TasksListViewProps) {
     return () => {
       isCancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, page]);
 
-  const newTaskHref = `/project/${projectId}/tasks/new`;
-  const rangeEnd = Math.min(PAGE_SIZE, totalCount);
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / DESKTOP_PAGE_SIZE));
+  const rangeStart = totalCount === 0 ? 0 : (page - 1) * DESKTOP_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * DESKTOP_PAGE_SIZE, totalCount);
+
+  const handlePageChange = useCallback(
+    (nextPage: number) => {
+      setPage(Math.min(Math.max(1, nextPage), totalPages));
+    },
+    [totalPages]
+  );
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end md:hidden">
+    <div className="hidden overflow-x-auto rounded-sm bg-white shadow-container md:block">
+      <table className="w-full min-w-180 text-left">
+        <thead>
+          <tr className="border-b border-surface-low">
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
+              Task ID
+            </th>
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
+              Title
+            </th>
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
+              Status
+            </th>
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
+              Due Date
+            </th>
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
+              Assignee
+            </th>
+            <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid" />
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading && (
+            <>
+              <TaskRowSkeleton />
+              <TaskRowSkeleton />
+              <TaskRowSkeleton />
+            </>
+          )}
+
+          {!isLoading && hasError && (
+            <tr>
+              <td
+                colSpan={6}
+                className="p-8 text-center text-body-md text-error-text"
+              >
+                Failed to load tasks
+              </td>
+            </tr>
+          )}
+
+          {!isLoading && !hasError && tasks.length === 0 && (
+            <tr>
+              <td
+                colSpan={6}
+                className="p-8 text-center text-body-md text-slate-mid"
+              >
+                No tasks found
+              </td>
+            </tr>
+          )}
+
+          {!isLoading &&
+            !hasError &&
+            tasks.map((task) => {
+              const isAssigned = Boolean(task.assignee?.name?.trim());
+
+              return (
+                <tr
+                  key={task.id}
+                  onClick={() => onTaskClick(task.id)}
+                  className="cursor-pointer border-b border-surface-low last:border-b-0 hover:bg-surface-low/50"
+                >
+                  <td className="p-4 text-body-md font-medium text-primary">
+                    {task.task_id}
+                  </td>
+                  <td className="p-4 text-body-md text-slate-dark">
+                    {task.title}
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className={`inline-flex items-center rounded-sm px-2 py-1 text-label-sm font-semibold uppercase tracking-wide ${STATUS_BADGE_CLASS[task.status]}`}
+                    >
+                      {STATUS_LABELS[task.status]}
+                    </span>
+                  </td>
+                  <td className="p-4 text-body-md text-slate-mid">
+                    {formatDueDate(task.due_date)}
+                  </td>
+                  <td className="p-4">
+                    {isAssigned ? (
+                      <div className="flex items-center gap-2">
+                        <MemberAvatar
+                          name={task.assignee!.name}
+                          size={24}
+                          radius={999}
+                        />
+                        <span className="text-body-md text-slate-dark">
+                          {task.assignee!.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="flex shrink-0 items-center justify-center bg-surface-low text-slate-mid"
+                          style={{ width: 24, height: 24, borderRadius: 999 }}
+                        >
+                          <UnassignedIcon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-body-md text-slate-mid">
+                          Unassigned
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <button
+                      type="button"
+                      aria-label="Task settings"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded-sm p-1 text-slate-mid transition-colors hover:bg-surface-low"
+                    >
+                      <KebabIcon width={16} height={16} aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+
+      <div className="flex items-center justify-between border-t border-surface-low px-4 py-3">
+        <span className="text-label-sm text-slate-mid">
+          {isLoading
+            ? 'Loading...'
+            : totalCount === 0
+              ? 'No tasks'
+              : `Showing ${rangeStart}-${rangeEnd} of ${totalCount} tasks`}
+        </span>
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mobile: infinite scroll
+// ---------------------------------------------------------------------------
+
+function MobileTaskList({
+  projectId,
+  onTaskClick,
+}: {
+  projectId: string;
+  onTaskClick: (taskId: string) => void;
+}) {
+  const router = useRouter();
+  const [tasks, setTasks] = useState<ProjectTaskListItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [hasInitialError, setHasInitialError] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function load() {
+      setIsInitialLoading(true);
+      setHasInitialError(false);
+      setTasks([]);
+      setTotalCount(0);
+
+      try {
+        const result = await fetchProjectTasks(projectId, 0, MOBILE_PAGE_SIZE);
+
+        if (isCancelled) return;
+
+        if (result.status === 'ok') {
+          setTasks(result.data);
+          setTotalCount(result.totalCount);
+        } else {
+          setHasInitialError(true);
+        }
+      } catch {
+        if (!isCancelled) setHasInitialError(true);
+      } finally {
+        if (!isCancelled) setIsInitialLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [projectId]);
+
+  const {
+    sentinelRef,
+    isLoading: isLoadingMore,
+    hasError: hasLoadMoreError,
+    retry,
+  } = useInfiniteScroll({
+    hasMore: tasks.length < totalCount,
+    onLoadMore: async () => {
+      const result = await fetchProjectTasks(
+        projectId,
+        tasks.length,
+        MOBILE_PAGE_SIZE
+      );
+
+      if (result.status !== 'ok') {
+        return { status: 'error' };
+      }
+
+      setTasks((prev) => [...prev, ...result.data]);
+      setTotalCount(result.totalCount);
+      return { status: 'ok' };
+    },
+  });
+
+  const newTaskHref = `/project/${projectId}/tasks/new`;
+
+  return (
+    <div className="flex flex-col gap-4 md:hidden">
+      <div className="flex justify-end">
         <Button
           variant="primary"
           onClick={() => router.push(newTaskHref)}
@@ -146,161 +414,8 @@ export function TasksListView({ projectId }: TasksListViewProps) {
         </Button>
       </div>
 
-      <div className="hidden overflow-x-auto rounded-sm bg-white shadow-container md:block">
-        <table className="w-full min-w-180 text-left">
-          <thead>
-            <tr className="border-b border-surface-low">
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
-                Task ID
-              </th>
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
-                Title
-              </th>
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
-                Status
-              </th>
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
-                Due Date
-              </th>
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid">
-                Assignee
-              </th>
-              <th className="p-4 text-label-sm font-semibold uppercase tracking-wide text-slate-mid" />
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && (
-              <>
-                <TaskRowSkeleton />
-                <TaskRowSkeleton />
-                <TaskRowSkeleton />
-              </>
-            )}
-
-            {!isLoading && hasError && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="p-8 text-center text-body-md text-error-text"
-                >
-                  Failed to load tasks
-                </td>
-              </tr>
-            )}
-
-            {!isLoading && !hasError && tasks.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="p-8 text-center text-body-md text-slate-mid"
-                >
-                  No tasks found
-                </td>
-              </tr>
-            )}
-
-            {!isLoading &&
-              !hasError &&
-              tasks.map((task) => {
-                const isAssigned = Boolean(task.assignee?.name?.trim());
-
-                return (
-                  <tr
-                    key={task.id}
-                    className="border-b border-surface-low last:border-b-0 hover:bg-surface-low/50"
-                  >
-                    <td className="p-4 text-body-md font-medium text-primary">
-                      {task.task_id}
-                    </td>
-                    <td className="p-4 text-body-md text-slate-dark">
-                      {task.title}
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center rounded-sm px-2 py-1 text-label-sm font-semibold uppercase tracking-wide ${STATUS_BADGE_CLASS[task.status]}`}
-                      >
-                        {STATUS_LABELS[task.status]}
-                      </span>
-                    </td>
-                    <td className="p-4 text-body-md text-slate-mid">
-                      {formatDueDate(task.due_date)}
-                    </td>
-                    <td className="p-4">
-                      {isAssigned ? (
-                        <div className="flex items-center gap-2">
-                          <MemberAvatar
-                            name={task.assignee!.name}
-                            size={24}
-                            radius={999}
-                          />
-                          <span className="text-body-md text-slate-dark">
-                            {task.assignee!.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="flex shrink-0 items-center justify-center bg-surface-low text-slate-mid"
-                            style={{ width: 24, height: 24, borderRadius: 999 }}
-                          >
-                            <UnassignedIcon className="h-3.5 w-3.5" />
-                          </span>
-                          <span className="text-body-md text-slate-mid">
-                            Unassigned
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <button
-                        type="button"
-                        aria-label="Task settings"
-                        className="rounded-sm p-1 text-slate-mid transition-colors hover:bg-surface-low"
-                      >
-                        <KebabIcon width={16} height={16} aria-hidden="true" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-
-        <div className="flex items-center justify-between border-t border-surface-low px-4 py-3">
-          <span className="text-label-sm text-slate-mid">
-            {isLoading
-              ? 'Loading...'
-              : `Showing ${rangeEnd} of ${totalCount} tasks`}
-          </span>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled
-                className="flex h-8 w-8 items-center justify-center text-slate-mid hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-mid"
-              >
-                ‹
-              </button>
-              <span className="text-label-sm text-slate-mid">
-                Page 1 of {totalPages}
-              </span>
-
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled
-                className="flex h-8 w-8 items-center justify-center text-slate-mid hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-mid"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-3 md:hidden">
-        {isLoading && (
+      <div className="flex flex-col gap-3">
+        {isInitialLoading && (
           <>
             <TaskCardSkeleton />
             <TaskCardSkeleton />
@@ -308,27 +423,28 @@ export function TasksListView({ projectId }: TasksListViewProps) {
           </>
         )}
 
-        {!isLoading && hasError && (
+        {!isInitialLoading && hasInitialError && (
           <div className="rounded-sm bg-white p-8 text-center text-body-md text-error-text shadow-container">
             Failed to load tasks
           </div>
         )}
 
-        {!isLoading && !hasError && tasks.length === 0 && (
+        {!isInitialLoading && !hasInitialError && tasks.length === 0 && (
           <div className="rounded-sm bg-white p-8 text-center text-body-md text-slate-mid shadow-container">
             No tasks found
           </div>
         )}
 
-        {!isLoading &&
-          !hasError &&
+        {!isInitialLoading &&
+          !hasInitialError &&
           tasks.map((task) => {
             const isAssigned = Boolean(task.assignee?.name?.trim());
 
             return (
               <div
                 key={task.id}
-                className="rounded-sm bg-white p-4 shadow-container"
+                onClick={() => onTaskClick(task.id)}
+                className="cursor-pointer rounded-sm bg-white p-4 shadow-container"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-label-sm font-medium uppercase tracking-wide text-slate-mid">
@@ -374,6 +490,7 @@ export function TasksListView({ projectId }: TasksListViewProps) {
                     <button
                       type="button"
                       aria-label="Task settings"
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded-sm p-1 text-slate-mid transition-colors hover:bg-surface-low"
                     >
                       <KebabIcon width={16} height={16} aria-hidden="true" />
@@ -384,26 +501,22 @@ export function TasksListView({ projectId }: TasksListViewProps) {
             );
           })}
 
-        {!isLoading && !hasError && tasks.length > 0 && (
-          <div className="flex items-center justify-between rounded-sm bg-white px-4 py-3 shadow-container">
+        {!isInitialLoading && !hasInitialError && tasks.length < totalCount && (
+          <div ref={sentinelRef} className="h-1" />
+        )}
+
+        {isLoadingMore && <TaskCardSkeleton />}
+
+        {hasLoadMoreError && (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <p className="text-center text-body-md text-red-500">
+              Failed to load tasks
+            </p>
             <button
-              type="button"
-              aria-label="Previous page"
-              disabled
-              className="flex h-8 w-8 items-center justify-center text-slate-mid hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-mid"
+              onClick={retry}
+              className="text-label-sm text-primary underline"
             >
-              ‹
-            </button>
-            <span className="text-label-sm text-slate-mid">
-              Page 1 of {totalPages}
-            </span>
-            <button
-              type="button"
-              aria-label="Next page"
-              disabled
-              className="flex h-8 w-8 items-center justify-center text-slate-mid hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-mid"
-            >
-              ›
+              Try again
             </button>
           </div>
         )}
