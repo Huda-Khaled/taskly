@@ -26,20 +26,30 @@ export type ProjectTasksResult =
 interface GetProjectTasksOptions {
   limit: number;
   offset: number;
+  search?: string;
 }
 
 export async function getProjectTasks(
   accessToken: string,
   projectId: string,
-  { limit, offset }: GetProjectTasksOptions
+  { limit, offset, search }: GetProjectTasksOptions
 ): Promise<ProjectTasksResult> {
   if (!accessToken) {
     return { status: 'unauthorized' };
   }
 
   try {
+    const params = new URLSearchParams();
+    params.set('project_id', `eq.${projectId}`);
+    params.set('order', 'created_at.desc');
+
+    const trimmedSearch = search?.trim();
+    if (trimmedSearch) {
+      params.set('title', `ilike.%${trimmedSearch}%`);
+    }
+
     const res = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/project_tasks?project_id=eq.${projectId}&order=created_at.desc`,
+      `${process.env.SUPABASE_URL}/rest/v1/project_tasks?${params.toString()}`,
       {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,

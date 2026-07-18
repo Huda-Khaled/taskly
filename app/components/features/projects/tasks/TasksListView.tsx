@@ -6,6 +6,7 @@ import { Button } from '@/app/components/ui/Button/Button';
 import { MemberAvatar } from '@/app/components/features/projects/members/MemberAvatar';
 import { Pagination } from '@/app/components/ui/Pagination/Pagination';
 import { useInfiniteScroll } from '@/app/hooks/useInfiniteScroll';
+import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
 import { fetchProjectTasks } from '@/app/actions/tasks/fetchProjectTasks';
 import type { ProjectTaskListItem } from '@/app/actions/tasks/getProjectTasks';
 import type { TaskStatus } from '@/app/lib/validations/task';
@@ -15,13 +16,14 @@ import UnassignedIcon from '@/assets/icons/UnassignedIcon.svg';
 
 interface TasksListViewProps {
   projectId: string;
+  searchTerm: string;
   onTaskClick: (taskId: string) => void;
-  /** 'pagination' = desktop table w/ classic pages. 'infinite' = mobile cards w/ scroll. */
   mode?: 'pagination' | 'infinite';
 }
 
 const DESKTOP_PAGE_SIZE = 10;
 const MOBILE_PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 400;
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   TO_DO: 'To Do',
@@ -46,7 +48,9 @@ const STATUS_BADGE_CLASS: Record<TaskStatus, string> = {
 };
 
 function formatDueDate(dateString: string | null): string {
-  if (!dateString) return '—';
+  if (!dateString) {
+    return '';
+  }
 
   return new Date(dateString).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -98,39 +102,57 @@ function TaskCardSkeleton() {
 
 export function TasksListView({
   projectId,
+  searchTerm,
   onTaskClick,
   mode = 'pagination',
 }: TasksListViewProps) {
   if (mode === 'infinite') {
-    return <MobileTaskList projectId={projectId} onTaskClick={onTaskClick} />;
+    return (
+      <MobileTaskList
+        projectId={projectId}
+        searchTerm={searchTerm}
+        onTaskClick={onTaskClick}
+      />
+    );
   }
 
-  return <DesktopTaskTable projectId={projectId} onTaskClick={onTaskClick} />;
+  return (
+    <DesktopTaskTable
+      projectId={projectId}
+      searchTerm={searchTerm}
+      onTaskClick={onTaskClick}
+    />
+  );
 }
-
-// ---------------------------------------------------------------------------
-// Desktop: classic pagination
-// ---------------------------------------------------------------------------
 
 function DesktopTaskTable({
   projectId,
+  searchTerm,
   onTaskClick,
 }: {
   projectId: string;
+  searchTerm: string;
   onTaskClick: (taskId: string) => void;
 }) {
+  const debouncedSearch = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const isSearching = debouncedSearch.trim().length > 0;
+
   const [tasks, setTasks] = useState<ProjectTaskListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Reset to page 1 whenever the project changes — done during render
-  // (not in an effect) to avoid the extra reset-then-refetch render pass.
   const [trackedProjectId, setTrackedProjectId] = useState(projectId);
+  const [trackedSearch, setTrackedSearch] = useState(debouncedSearch);
 
   if (projectId !== trackedProjectId) {
     setTrackedProjectId(projectId);
+    setPage(1);
+  }
+
+  if (debouncedSearch !== trackedSearch) {
+    setTrackedSearch(debouncedSearch);
     setPage(1);
   }
 
@@ -146,7 +168,8 @@ function DesktopTaskTable({
         const result = await fetchProjectTasks(
           projectId,
           offset,
-          DESKTOP_PAGE_SIZE
+          DESKTOP_PAGE_SIZE,
+          debouncedSearch
         );
 
         if (isCancelled) return;
@@ -169,7 +192,7 @@ function DesktopTaskTable({
     return () => {
       isCancelled = true;
     };
-  }, [projectId, page]);
+  }, [projectId, page, debouncedSearch]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / DESKTOP_PAGE_SIZE));
   const rangeStart = totalCount === 0 ? 0 : (page - 1) * DESKTOP_PAGE_SIZE + 1;
@@ -220,7 +243,9 @@ function DesktopTaskTable({
                 colSpan={6}
                 className="p-8 text-center text-body-md text-error-text"
               >
-                Failed to load tasks
+                {isSearching
+                  ? 'Failed to search tasks'
+                  : 'Failed to load tasks'}
               </td>
             </tr>
           )}
@@ -231,7 +256,9 @@ function DesktopTaskTable({
                 colSpan={6}
                 className="p-8 text-center text-body-md text-slate-mid"
               >
-                No tasks found
+                {isSearching
+                  ? 'No tasks found matching your search'
+                  : 'No tasks found for this project'}
               </td>
             </tr>
           )}
@@ -324,18 +351,20 @@ function DesktopTaskTable({
   );
 }
 
-// ---------------------------------------------------------------------------
 // Mobile: infinite scroll
-// ---------------------------------------------------------------------------
-
 function MobileTaskList({
   projectId,
+  searchTerm,
   onTaskClick,
 }: {
   projectId: string;
+  searchTerm: string;
   onTaskClick: (taskId: string) => void;
 }) {
   const router = useRouter();
+  const debouncedSearch = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const isSearching = debouncedSearch.trim().length > 0;
+
   const [tasks, setTasks] = useState<ProjectTaskListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -351,7 +380,12 @@ function MobileTaskList({
       setTotalCount(0);
 
       try {
-        const result = await fetchProjectTasks(projectId, 0, MOBILE_PAGE_SIZE);
+        const result = await fetchProjectTasks(
+          projectId,
+          0,
+          MOBILE_PAGE_SIZE,
+          debouncedSearch
+        );
 
         if (isCancelled) return;
 
@@ -373,7 +407,7 @@ function MobileTaskList({
     return () => {
       isCancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, debouncedSearch]);
 
   const {
     sentinelRef,
@@ -386,7 +420,8 @@ function MobileTaskList({
       const result = await fetchProjectTasks(
         projectId,
         tasks.length,
-        MOBILE_PAGE_SIZE
+        MOBILE_PAGE_SIZE,
+        debouncedSearch
       );
 
       if (result.status !== 'ok') {
@@ -425,13 +460,15 @@ function MobileTaskList({
 
         {!isInitialLoading && hasInitialError && (
           <div className="rounded-sm bg-white p-8 text-center text-body-md text-error-text shadow-container">
-            Failed to load tasks
+            {isSearching ? 'Failed to search tasks' : 'Failed to load tasks'}
           </div>
         )}
 
         {!isInitialLoading && !hasInitialError && tasks.length === 0 && (
           <div className="rounded-sm bg-white p-8 text-center text-body-md text-slate-mid shadow-container">
-            No tasks found
+            {isSearching
+              ? 'No tasks found matching your search'
+              : 'No tasks found for this project'}
           </div>
         )}
 
