@@ -28,6 +28,7 @@ export function TasksWorkboard({
   const router = useRouter();
   const [view, setView] = useState<ViewOption>(initialView);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   function handleViewChange(nextView: ViewOption) {
     setView(nextView);
@@ -66,8 +67,9 @@ export function TasksWorkboard({
 
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search tasks..."
-                disabled
                 className="h-11 w-full rounded-sm bg-surface-highest pl-10 pr-4 text-body-md text-slate-dark placeholder:text-slate-mid"
               />
             </div>
@@ -127,6 +129,7 @@ export function TasksWorkboard({
       <div className="sm:hidden">
         <TasksListView
           projectId={projectId}
+          searchTerm={searchTerm}
           onTaskClick={setSelectedTaskId}
           mode="infinite"
         />
@@ -135,10 +138,15 @@ export function TasksWorkboard({
       {/* Desktop: board (with per-column infinite scroll) or classic-paginated table */}
       <div className="hidden sm:block">
         {view === 'board' ? (
-          <TaskBoard projectId={projectId} onTaskClick={setSelectedTaskId} />
+          <TaskBoard
+            projectId={projectId}
+            searchTerm={searchTerm}
+            onTaskClick={setSelectedTaskId}
+          />
         ) : (
           <TasksListView
             projectId={projectId}
+            searchTerm={searchTerm}
             onTaskClick={setSelectedTaskId}
             mode="pagination"
           />

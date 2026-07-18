@@ -1,25 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import Link from 'next/link';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { MemberAvatar } from '@/app/components/features/projects/members/MemberAvatar';
 import { fetchTasksByStatus } from '@/app/actions/tasks/fetchTasksByStatus';
 import type { EpicTask } from '@/app/actions/tasks/getEpicTasks';
 import type { TaskStatus } from '@/app/lib/validations/task';
 import { useInfiniteScroll } from '@/app/hooks/useInfiniteScroll';
+import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
 import PlusIcon from '@/assets/icons/PlusIcon.svg';
 import CalendarIcon from '@/assets/icons/CalendarIcon.svg';
 
 interface TaskBoardColumnProps {
   projectId: string;
   status: TaskStatus;
+  searchTerm: string;
   label: string;
   dotClass: string;
   accentClass: string;
   onTaskClick: (taskId: string) => void;
 }
 
+export interface RemovedTask {
+  task: EpicTask;
+  index: number;
+}
+
+export interface TaskBoardColumnHandle {
+  removeTask: (taskId: string) => RemovedTask | undefined;
+  insertTask: (task: EpicTask, atIndex?: number) => void;
+}
+
 const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 400;
 
 interface DueDateMeta {
   label: string;
@@ -62,21 +76,41 @@ function TaskCardSkeleton() {
   );
 }
 
-function TaskCard({
+export function TaskCard({
   task,
+  status,
   accentClass,
   onTaskClick,
 }: {
   task: EpicTask;
+  status: TaskStatus;
   accentClass: string;
   onTaskClick: (taskId: string) => void;
 }) {
   const dueMeta = getDueDateMeta(task.due_date);
 
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: task.id,
+      data: { status, task },
+    });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
       onClick={() => onTaskClick(task.id)}
-      className={`flex cursor-pointer flex-col gap-3 rounded-sm border-l-2 bg-white p-3 shadow-container ${accentClass}`}
+      className={`flex cursor-grab touch-none flex-col gap-3 rounded-sm border-l-2 bg-white p-3 shadow-container active:cursor-grabbing ${accentClass} ${
+        isDragging ? 'opacity-40' : ''
+      }`}
     >
       <p className="text-body-md text-slate-dark">{task.title}</p>
 
@@ -100,18 +134,46 @@ function TaskCard({
   );
 }
 
-export function TaskBoardColumn({
-  projectId,
-  status,
-  label,
-  dotClass,
-  accentClass,
-  onTaskClick,
-}: TaskBoardColumnProps) {
+export const TaskBoardColumn = forwardRef<
+  TaskBoardColumnHandle,
+  TaskBoardColumnProps
+>(function TaskBoardColumn(
+  { projectId, status, searchTerm, label, dotClass, accentClass, onTaskClick },
+  ref
+) {
+  const debouncedSearch = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
+  const isSearching = debouncedSearch.trim().length > 0;
+
   const [tasks, setTasks] = useState<EpicTask[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasInitialError, setHasInitialError] = useState(false);
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: status,
+  });
+
+  useImperativeHandle(ref, () => ({
+    removeTask: (taskId) => {
+      const index = tasks.findIndex((t) => t.id === taskId);
+      if (index === -1) return undefined;
+
+      const task = tasks[index];
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+
+      return { task, index };
+    },
+    insertTask: (task, atIndex = 0) => {
+      setTasks((prev) => {
+        const next = [...prev];
+        const clampedIndex = Math.min(Math.max(0, atIndex), next.length);
+        next.splice(clampedIndex, 0, task);
+        return next;
+      });
+      setTotalCount((prev) => prev + 1);
+    },
+  }));
 
   useEffect(() => {
     let isCancelled = false;
@@ -127,7 +189,8 @@ export function TaskBoardColumn({
           projectId,
           status,
           0,
-          PAGE_SIZE
+          PAGE_SIZE,
+          debouncedSearch
         );
 
         if (isCancelled) return;
@@ -150,7 +213,7 @@ export function TaskBoardColumn({
     return () => {
       isCancelled = true;
     };
-  }, [projectId, status]);
+  }, [projectId, status, debouncedSearch]);
 
   const {
     sentinelRef,
@@ -164,7 +227,8 @@ export function TaskBoardColumn({
         projectId,
         status,
         tasks.length,
-        PAGE_SIZE
+        PAGE_SIZE,
+        debouncedSearch
       );
 
       if (result.status !== 'ok') {
@@ -180,7 +244,12 @@ export function TaskBoardColumn({
   const newTaskHref = `/project/${projectId}/tasks/new?status=${status}`;
 
   return (
-    <div className="flex w-72 shrink-0 flex-col gap-3">
+    <div
+      ref={setDroppableRef}
+      className={`flex w-72 shrink-0 flex-col gap-3 rounded-sm transition-colors ${
+        isOver ? 'bg-primary/5 ring-2 ring-primary/30' : ''
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
@@ -222,13 +291,15 @@ export function TaskBoardColumn({
 
         {!isInitialLoading && hasInitialError && (
           <p className="rounded-sm bg-error-surface p-3 text-center text-label-sm text-error-text">
-            Failed to load tasks
+            {isSearching ? 'Failed to search tasks' : 'Failed to load tasks'}
           </p>
         )}
 
         {!isInitialLoading && !hasInitialError && tasks.length === 0 && (
           <p className="rounded-sm border border-dashed border-slate-light p-3 text-center text-label-sm text-slate-light">
-            No tasks
+            {isSearching
+              ? 'No tasks found matching your search'
+              : 'No tasks found for this project'}
           </p>
         )}
 
@@ -238,6 +309,7 @@ export function TaskBoardColumn({
             <TaskCard
               key={task.id}
               task={task}
+              status={status}
               accentClass={accentClass}
               onTaskClick={onTaskClick}
             />
@@ -265,4 +337,6 @@ export function TaskBoardColumn({
       </div>
     </div>
   );
-}
+});
+
+TaskBoardColumn.displayName = 'TaskBoardColumn';

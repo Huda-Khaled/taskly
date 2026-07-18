@@ -8,10 +8,15 @@ export async function fetchTasksByStatus(
   projectId: string,
   status: TaskStatus,
   offset: number,
-  limit: number
+  limit: number,
+  search?: string
 ) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token')?.value ?? '';
 
-  return getTasksByStatus(accessToken, projectId, status, { limit, offset });
+  return getTasksByStatus(accessToken, projectId, status, {
+    limit,
+    offset,
+    search,
+  });
 }
