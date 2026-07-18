@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 import { Button } from '@/app/components/ui/Button/Button';
-import SearchIcon from '@/assets/icons/SearchIcon.svg';
 import PlusIcon from '@/assets/icons/Plus.svg';
 
 interface EpicsHeaderProps {
@@ -23,34 +22,17 @@ export function EpicsHeader({ projectId, projectName }: EpicsHeaderProps) {
         <h1 className="text-headline-lg text-slate-dark">Project Epics</h1>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative">
-          <SearchIcon
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-mid"
-            width={16}
-            height={16}
-            aria-hidden="true"
-          />
-          <input
-            type="text"
-            placeholder="Search epics..."
-            disabled
-            className="h-11 w-full rounded-sm bg-surface-highest pl-9 pr-4 text-body-md text-slate-dark placeholder:text-slate-mid sm:w-64"
-          />
-        </div>
-
-        <Link
-          href={`/project/${projectId}/epics/new`}
-          className="hidden lg:block"
-        >
-          <Button variant="primary">
-            <span className="flex items-center gap-2">
-              <span className="text-lg leading-none">+</span>
-              New Epic
-            </span>
-          </Button>
-        </Link>
-      </div>
+      <Link
+        href={`/project/${projectId}/epics/new`}
+        className="hidden lg:block"
+      >
+        <Button variant="primary">
+          <span className="flex items-center gap-2">
+            <span className="text-lg leading-none">+</span>
+            New Epic
+          </span>
+        </Button>
+      </Link>
 
       <Link
         href={`/project/${projectId}/epics/new`}

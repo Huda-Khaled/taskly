@@ -4,14 +4,20 @@ import type { EpicTask } from './getEpicTasks';
 import type { TaskStatus } from '@/app/lib/validations/task';
 
 export type TasksByStatusResult =
-  | { status: 'ok'; data: EpicTask[] }
+  | { status: 'ok'; data: EpicTask[]; totalCount: number }
   | { status: 'unauthorized' }
   | { status: 'error' };
+
+interface GetTasksByStatusOptions {
+  limit: number;
+  offset: number;
+}
 
 export async function getTasksByStatus(
   accessToken: string,
   projectId: string,
-  taskStatus: TaskStatus
+  taskStatus: TaskStatus,
+  { limit, offset }: GetTasksByStatusOptions
 ): Promise<TasksByStatusResult> {
   if (!accessToken) {
     return { status: 'unauthorized' };
@@ -19,12 +25,14 @@ export async function getTasksByStatus(
 
   try {
     const res = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/project_tasks?project_id=eq.${projectId}&status=eq.${taskStatus}`,
+      `${process.env.SUPABASE_URL}/rest/v1/project_tasks?project_id=eq.${projectId}&status=eq.${taskStatus}&order=created_at.desc`,
       {
         headers: {
           apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          Prefer: 'count=exact',
+          Range: `${offset}-${offset + limit - 1}`,
         },
         cache: 'no-store',
       }
@@ -40,7 +48,12 @@ export async function getTasksByStatus(
 
     const data: EpicTask[] = await res.json();
 
-    return { status: 'ok', data };
+    const contentRange = res.headers.get('content-range');
+    const totalCount = contentRange
+      ? parseInt(contentRange.split('/')[1], 10)
+      : data.length;
+
+    return { status: 'ok', data, totalCount };
   } catch {
     return { status: 'error' };
   }

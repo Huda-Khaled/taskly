@@ -26,15 +26,21 @@ export type ProjectEpicsResult =
 interface GetEpicsParams {
   limit?: number;
   offset?: number;
+  search?: string;
 }
 
 export async function getEpics(
   accessToken: string,
   projectId: string,
-  { limit = 10, offset = 0 }: GetEpicsParams = {}
+  { limit = 10, offset = 0, search = '' }: GetEpicsParams = {}
 ): Promise<ProjectEpicsResult> {
+  const trimmedSearch = search.trim();
+  const searchFilter = trimmedSearch
+    ? `&title=ilike.%25${encodeURIComponent(trimmedSearch)}%25`
+    : '';
+
   const res = await fetch(
-    `${process.env.SUPABASE_URL}/rest/v1/project_epics?project_id=eq.${projectId}&limit=${limit}&offset=${offset}`,
+    `${process.env.SUPABASE_URL}/rest/v1/project_epics?project_id=eq.${projectId}${searchFilter}&limit=${limit}&offset=${offset}`,
     {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
