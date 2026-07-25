@@ -12,7 +12,7 @@ import {
   ForgotPasswordFormSchema,
   RESEND_SECONDS,
   MAX_TRIALS,
-} from '@/app/lib/validations/forgotPassword.schema';
+} from '@/app/lib/validations/forgotPassword';
 import LongArrow from '@/assets/icons/LongArrow.svg';
 import TimerIcon from '@/assets/icons/Timer.svg';
 import CheckIcon from '@/assets/icons/CheckIcon.svg';

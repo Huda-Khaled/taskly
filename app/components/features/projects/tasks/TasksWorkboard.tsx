@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 import { TaskBoard } from './TaskBoard';
 import { TasksListView } from './TasksListView';
-import { TaskDetailsModal } from './TaskDetailsModal';
+import { TaskDetailsModal } from './TaskDetailsModal/TaskDetailsModal';
 import SearchIcon from '@/assets/icons/SearchIcon.svg';
 import GridIcon from '@/assets/icons/GridIconB.svg';
 import ArrowDownIcon from '@/assets/icons/ArrowDown.svg';
