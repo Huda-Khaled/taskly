@@ -1,6 +1,10 @@
+'use client';
+
+import { useState } from 'react';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 import { Button } from '@/app/components/ui/Button/Button';
 import InviteMemberIcon from '@/assets/icons/Membersw.svg';
+import { InviteMemberModal } from './InviteMemberModal';
 
 interface MembersHeaderProps {
   projectId: string;
@@ -8,6 +12,8 @@ interface MembersHeaderProps {
 }
 
 export function MembersHeader({ projectId, projectName }: MembersHeaderProps) {
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+
   return (
     <>
       <div className="flex items-start justify-between">
@@ -23,7 +29,11 @@ export function MembersHeader({ projectId, projectName }: MembersHeaderProps) {
         </div>
 
         <div className="hidden lg:block">
-          <Button variant="primary" ariaLabel="Invite member">
+          <Button
+            variant="primary"
+            ariaLabel="Invite member"
+            onClick={() => setIsInviteOpen(true)}
+          >
             <span className="flex items-center gap-2">
               <InviteMemberIcon />
               Invite Member
@@ -35,10 +45,18 @@ export function MembersHeader({ projectId, projectName }: MembersHeaderProps) {
       <button
         type="button"
         aria-label="Invite member"
+        onClick={() => setIsInviteOpen(true)}
         className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg lg:hidden"
       >
         <InviteMemberIcon className="text-white" width={22} height={22} />
       </button>
+
+      <InviteMemberModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        projectId={projectId}
+        projectName={projectName}
+      />
     </>
   );
 }

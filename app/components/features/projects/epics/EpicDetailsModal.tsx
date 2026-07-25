@@ -9,7 +9,7 @@ import { EditableDescription } from './EditableDescription';
 import { EditableAssignee } from './EditableAssignee';
 import { EditableDeadline } from './EditableDeadline';
 import { EpicTasksSection } from './EpicTasksSection';
-import { TaskDetailsModal } from '@/app/components/features/projects/tasks/TaskDetailsModal';
+import { TaskDetailsModal } from '@/app/components/features/projects/tasks/TaskDetailsModal/TaskDetailsModal';
 import { fetchSingleEpic } from '@/app/actions/epic/Fetchepicdetails';
 import type { ProjectEpic } from '@/app/actions/epic/getEpics';
 import type { ProjectMember } from '@/app/actions/project/getProjectMembers';
