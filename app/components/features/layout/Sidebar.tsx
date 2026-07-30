@@ -6,6 +6,7 @@ import { usePathname, useParams } from 'next/navigation';
 import Logo from '@/app/components/ui/Logo/Logo';
 import { Button } from '@/app/components/ui/Button/Button';
 import ProjectsIcon from '@/assets/icons/Projects.svg';
+import StatisticsIcon from '@/assets/icons/Statistics.svg';
 import EpicsIcon from '@/assets/icons/Epics.svg';
 import TasksIcon from '@/assets/icons/Tasks.svg';
 import MembersIcon from '@/assets/icons/Members.svg';
@@ -21,8 +22,28 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
-const NAV_ITEMS = [
-  { label: 'Projects', segment: '', icon: ProjectsIcon },
+type NavItem =
+  | {
+      label: string;
+      href: string;
+      icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+      global: true;
+    }
+  | {
+      label: string;
+      segment: string;
+      icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+      global?: false;
+    };
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Projects', href: '/project', icon: ProjectsIcon, global: true },
+  {
+    label: 'My Statistics',
+    href: '/my-statistics',
+    icon: StatisticsIcon,
+    global: true,
+  },
   { label: 'Project Epics', segment: 'epics', icon: EpicsIcon },
   { label: 'Project Tasks', segment: 'tasks', icon: TasksIcon },
   { label: 'Project Members', segment: 'members', icon: MembersIcon },
@@ -44,12 +65,14 @@ export function Sidebar({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
-  function buildHref(segment: string) {
-    if (!segment) return '/project';
+  // 🆕 بيتعامل مع النوعين: global items ليها href ثابت، project items بتتبني
+  function buildHref(item: NavItem) {
+    if (item.global) return item.href;
     if (!projectId) return '/project';
-    return `/project/${projectId}/${segment}`;
+    return `/project/${projectId}/${item.segment}`;
   }
-  const visibleItems = NAV_ITEMS.filter((item) => !item.segment || projectId);
+
+  const visibleItems = NAV_ITEMS.filter((item) => item.global || projectId);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -93,17 +116,17 @@ export function Sidebar({
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-4">
           {visibleItems.map((item) => {
-            const href = buildHref(item.segment);
+            const href = buildHref(item);
             const Icon = item.icon;
 
-            const isActive =
-              item.segment === ''
-                ? pathname === '/project'
-                : pathname.includes(`/${item.segment}`);
+            // 🆕 active state: exact match للـ global items، includes للـ project items
+            const isActive = item.global
+              ? pathname === item.href
+              : pathname.includes(`/${item.segment}`);
 
             return (
               <Link
-                key={item.segment || 'projects'}
+                key={item.global ? item.href : item.segment}
                 href={href}
                 onClick={onCloseMobile}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-body-md transition-colors ${
