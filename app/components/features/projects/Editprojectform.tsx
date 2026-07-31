@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { updateProjectAction } from '@/app/actions/project/updateProject';
 import { ProjectForm } from './Projectform';
-import type { Project } from '@/app/actions/project/getProject';
+import type { Project } from '@/app/api/projects/getProject';
 import CirclePlus from '@/assets/icons/CirclePlus .svg';
 
 interface EditProjectFormProps {

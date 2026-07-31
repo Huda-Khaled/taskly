@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getProjectById } from '@/app/actions/project/getProject';
+import { getProjectById } from '@/app/api/projects/getProject';
 import { getProjectMembers } from '@/app/actions/project/getProjectMembers';
 import { MembersHeader } from '@/app/components/features/projects/members/MembersHeader';
 import { MembersTable } from '@/app/components/features/projects/members/MembersTable';

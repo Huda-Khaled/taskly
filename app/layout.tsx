@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import StoreProvider from './StoreProvider';
 import { Toaster } from 'sonner';
+import ReactQueryProvider from '@/app/lib/react-query/provider';
 import type { User } from '@/app/lib/store/slices/userSlice';
 import './globals.css';
 
@@ -46,16 +47,18 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <StoreProvider initialUser={user}>{children}</StoreProvider>
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            classNames: {
-              error: '!bg-error !text-white',
-              success: '!bg-success !text-white',
-            },
-          }}
-        />
+        <ReactQueryProvider>
+          <StoreProvider initialUser={user}>{children}</StoreProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              classNames: {
+                error: '!bg-error !text-white',
+                success: '!bg-success !text-white',
+              },
+            }}
+          />
+        </ReactQueryProvider>
       </body>
     </html>
   );

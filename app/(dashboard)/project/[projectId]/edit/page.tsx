@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getProjectById } from '@/app/actions/project/getProject';
+import { getProjectById } from '@/app/api/projects/getProject';
 import { EditProjectForm } from '@/app/components/features/projects/Editprojectform';
 import { Breadcrumb } from '@/app/components/ui/Breadcrumb/Breadcrumb';
 

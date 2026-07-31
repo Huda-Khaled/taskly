@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getProjectById } from '@/app/actions/project/getProject';
+import { getProjectById } from '@/app/api/projects/getProject';
 import { getProjectMembers } from '@/app/actions/project/getProjectMembers';
 import { getEpicsForSelect } from '@/app/actions/tasks/getEpicsForSelect';
 import { CreateTaskHeader } from '@/app/components/features/projects/tasks/CreateTaskHeader';

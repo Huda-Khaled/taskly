@@ -15,7 +15,7 @@ import ChevronRightIcon from '@/assets/icons/ChevronRightIcon.svg';
 
 interface DateRangePickerProps {
   startDate: string;
-  endDate: string; 
+  endDate: string;
   onChange: (startDate: string, endDate: string) => void;
 }
 

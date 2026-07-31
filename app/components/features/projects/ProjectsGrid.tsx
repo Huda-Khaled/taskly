@@ -1,10 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { ProjectCard } from './ProjectCard';
 import { AddProjectCard } from './AddProjectCard';
-import { loadMoreProjects } from '@/app/actions/project/loadMoreProjects';
-import type { Project } from '@/app/actions/project/getProject';
+import type { Project } from '@/app/api/projects/getProject';
+import { useProjects } from './hooks/useProjects';
+import { useInfiniteProjects } from './hooks/useInfiniteProjects';
+import { useIsMobile } from '@/app/hooks/useismobile';
 
 interface ProjectsGridProps {
   initialProjects: Project[];
@@ -16,49 +19,38 @@ interface ProjectsGridProps {
 
 export function ProjectsGrid({
   initialProjects,
-  totalCount,
   pageSize,
   currentPage,
   totalPages,
 }: ProjectsGridProps) {
-  const [projects, setProjects] = useState(initialProjects);
-  const [loadedCount, setLoadedCount] = useState(
-    (currentPage - 1) * pageSize + initialProjects.length
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadMoreError, setLoadMoreError] = useState(false);
-  const isLoadingRef = useRef(false);
+  const isMobile = useIsMobile();
+  const router = useRouter();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const { data: pageData } = useProjects({
+    limit: pageSize,
+    offset: (currentPage - 1) * pageSize,
+    enabled: !isMobile,
+  });
+  const {
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+  } = useInfiniteProjects({
+    limit: pageSize,
+    enabled: isMobile,
+  });
+
   const handleLoadMore = useCallback(async () => {
-    if (isLoadingRef.current || loadedCount >= totalCount) return;
-
-    isLoadingRef.current = true;
-    setIsLoading(true);
-    setLoadMoreError(false);
-
-    try {
-      const result = await loadMoreProjects(loadedCount, pageSize);
-
-      if (result.status === 'ok') {
-        setProjects((prev) => [...prev, ...result.data]);
-        setLoadedCount((prev) => prev + result.data.length);
-      } else {
-        setLoadMoreError(true);
-      }
-    } catch {
-      setLoadMoreError(true);
-    }
-
-    isLoadingRef.current = false;
-    setIsLoading(false);
-  }, [loadedCount, totalCount, pageSize]);
+    if (!hasNextPage || isFetchingNextPage) return;
+    await fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    if (loadMoreError) return;
+    if (!sentinel || !hasNextPage || !isMobile) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -69,7 +61,30 @@ export function ProjectsGrid({
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [handleLoadMore, loadMoreError]);
+  }, [handleLoadMore, hasNextPage, isMobile]);
+  const firstInfinitePage = infiniteData?.pages[0];
+  const infiniteLoadFailed =
+    isMobile && !!firstInfinitePage && firstInfinitePage.status !== 'ok';
+
+  const rawProjects = isMobile
+    ? infiniteData?.pages.some((page) => page.status === 'ok')
+      ? infiniteData.pages.flatMap((page) =>
+          page.status === 'ok' ? page.data : []
+        )
+      : initialProjects
+    : pageData?.status === 'ok'
+      ? pageData.data
+      : initialProjects;
+
+  const projects = Array.from(
+    new Map(rawProjects.map((project) => [project.id, project])).values()
+  );
+
+  useEffect(() => {
+    if (firstInfinitePage?.status === 'unauthorized') {
+      router.push('/login');
+    }
+  }, [firstInfinitePage?.status, router]);
 
   return (
     <>
@@ -91,28 +106,27 @@ export function ProjectsGrid({
 
       <div ref={sentinelRef} className="h-1 lg:hidden" />
 
-      {isLoading && (
+      {isFetchingNextPage && (
         <p className="text-center text-body-md text-slate-mid lg:hidden">
           Loading more projects...
         </p>
       )}
 
-      {loadMoreError && (
-        <div className="flex flex-col items-center gap-2 py-4 lg:hidden">
-          <p className="text-center text-body-md text-red-500">
-            Failed to load projects
-          </p>
-          <button
-            onClick={() => {
-              setLoadMoreError(false);
-              handleLoadMore();
-            }}
-            className="text-label-sm text-primary underline"
-          >
-            Try again
-          </button>
-        </div>
-      )}
+      {(isError ||
+        (infiniteLoadFailed && firstInfinitePage?.status !== 'unauthorized')) &&
+        !isFetchingNextPage && (
+          <div className="flex flex-col items-center gap-2 py-4 lg:hidden">
+            <p className="text-center text-body-md text-red-500">
+              Failed to load projects
+            </p>
+            <button
+              onClick={() => void fetchNextPage()}
+              className="text-label-sm text-primary underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
-import { getProjectById } from '@/app/actions/project/getProject';
+import { getProjectById } from '@/app/api/projects/getProject';
 import { getProjectMembers } from '@/app/actions/project/getProjectMembers';
 import { CreateEpicHeader } from '@/app/components/features/projects/epics/CreateEpicHeader';
 import { CreateEpicForm } from '@/app/components/features/projects/epics/CreateEpicForm';

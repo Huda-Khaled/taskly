@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getProjects } from './getProject';
+import { getProjects } from '../../api/projects/getProject';
 
 export async function loadMoreProjects(offset: number, limit: number) {
   const cookieStore = await cookies();

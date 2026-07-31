@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { getProjectById } from '@/app/actions/project/getProject';
+import { getProjectById } from '@/app/api/projects/getProject';
 import { TasksWorkboard } from '@/app/components/features/projects/tasks/TasksWorkboard';
 
 interface TasksPageProps {
