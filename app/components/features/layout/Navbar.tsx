@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/Button/Button';
 import MenuIcon from '@/assets/icons/menu.svg';
 import { getInitials } from '@/app/lib/utils/getInitials';
-import { logoutAction } from '@/app/actions/auth/logout';
+import { useLogout } from '@/app/components/features/auth/hooks/useLogout';
 import { useAppSelector } from '@/app/lib/store/hooks';
 import { selectUser } from '@/app/lib/store/slices/userSelectors';
 interface NavbarProps {
@@ -17,9 +17,8 @@ export function Navbar({ onOpenMobileMenu }: NavbarProps) {
   const jobTitle = user?.role ?? '';
   const initials = getInitials(name);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const logoutMutation = useLogout();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -34,22 +33,8 @@ export function Navbar({ onOpenMobileMenu }: NavbarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  async function handleLogout() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await logoutAction();
-
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  function handleLogout() {
+    logoutMutation.mutate();
   }
 
   return (
@@ -88,11 +73,17 @@ export function Navbar({ onOpenMobileMenu }: NavbarProps) {
               <p className="text-label-sm text-primary truncate">{jobTitle}</p>
             </div>
 
-            {error && (
-              <p className="px-4 py-2 text-label-sm text-error">{error}</p>
+            {logoutMutation.error && (
+              <p className="px-4 py-2 text-label-sm text-error">
+                {logoutMutation.error.message}
+              </p>
             )}
-            <Button variant="ghost" onClick={handleLogout} disabled={isLoading}>
-              {isLoading ? 'Logging out…' : 'Logout'}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              disabled={logoutMutation.isPending}
+            >
+              {logoutMutation.isPending ? 'Logging out…' : 'Logout'}
             </Button>
           </div>
         )}

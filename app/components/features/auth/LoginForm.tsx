@@ -7,22 +7,23 @@ import { useState } from 'react';
 import { loginSchema, type LoginSchema } from '@/app/lib/validations/auth';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
-import { loginAction } from '@/app/actions/auth/login';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import EmailIcon from '@/assets/icons/Text.svg';
 import EyeIcon from '@/assets/icons/eye.svg';
 import EyeOffIcon from '@/assets/icons/eyeoff.svg';
+import { useLogin } from './hooks/useLogin';
 
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const { mutateAsync: login, isPending } = useLogin();
 
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema) as Resolver<LoginSchema>,
     mode: 'onTouched',
@@ -31,7 +32,7 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginSchema) => {
     try {
-      const result = await loginAction({
+      const result = await login({
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
@@ -141,18 +142,8 @@ export function LoginForm() {
           )}
         />
       </div>
-      {/* 
-      {serverError && (
-        <p
-          role="alert"
-          aria-live="assertive"
-          className="text-sm text-error text-center"
-        >
-          {serverError}
-        </p>
-      )} */}
-      <Button type="submit" variant="primary" disabled={isSubmitting}>
-        {isSubmitting ? 'Logging in...' : 'Log In'}
+      <Button type="submit" variant="primary" disabled={isPending}>
+        {isPending ? 'Logging in...' : 'Log In'}
       </Button>
 
       <p className="text-center text-slate-mid">

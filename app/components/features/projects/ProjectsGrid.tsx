@@ -7,6 +7,7 @@ import { AddProjectCard } from './AddProjectCard';
 import type { Project } from '@/app/api/projects/getProject';
 import { useProjects } from './hooks/useProjects';
 import { useInfiniteProjects } from './hooks/useInfiniteProjects';
+import { ErrorState } from '@/app/components/features/projects/ErrorProjects';
 import { useIsMobile } from '@/app/hooks/useismobile';
 
 interface ProjectsGridProps {
@@ -79,12 +80,14 @@ export function ProjectsGrid({
   const projects = Array.from(
     new Map(rawProjects.map((project) => [project.id, project])).values()
   );
-
   useEffect(() => {
-    if (firstInfinitePage?.status === 'unauthorized') {
+    if (
+      firstInfinitePage?.status === 'unauthorized' ||
+      pageData?.status === 'unauthorized'
+    ) {
       router.push('/login');
     }
-  }, [firstInfinitePage?.status, router]);
+  }, [firstInfinitePage?.status, pageData?.status, router]);
 
   return (
     <>
@@ -127,6 +130,12 @@ export function ProjectsGrid({
             </button>
           </div>
         )}
+
+      {pageData?.status === 'error' && !isMobile && (
+        <div className="lg:col-span-3">
+          <ErrorState />
+        </div>
+      )}
     </>
   );
 }

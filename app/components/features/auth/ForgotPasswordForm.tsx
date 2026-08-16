@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
-import { forgotPasswordAction } from '@/app/actions/auth/forgotPassword';
+import { useForgotPassword } from './hooks/useForgotPassword';
 import {
   forgotPasswordSchema,
   ForgotPasswordFormSchema,
@@ -21,55 +21,45 @@ import { toast } from 'sonner';
 
 export function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
-  // const [serverError, setServerError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [trials, setTrials] = useState(0);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { mutateAsync: forgotPassword, isPending } = useForgotPassword();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ForgotPasswordFormSchema>({
     resolver: zodResolver(forgotPasswordSchema),
     mode: 'onTouched',
   });
 
-  const startTimer = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setTimeLeft(RESEND_SECONDS);
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
+  // Drives the resend countdown. Runs whenever `trials` changes (i.e. a
+  // successful submit happened). Only subscribes to the external timer
+  // (setInterval) and calls setState from within its callback — the
+  // initial countdown value is set in the onSubmit event handler instead,
+  // so the effect body itself never calls setState synchronously.
+  useEffect(() => {
+    if (trials === 0) return;
+
+    const id = setInterval(() => {
+      setTimeLeft((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
-  };
 
-  useEffect(() => {
-    if (timeLeft === 0 && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [timeLeft]);
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+    return () => clearInterval(id);
+  }, [trials]);
 
   const onSubmit = async (data: ForgotPasswordFormSchema) => {
     try {
-      const result = await forgotPasswordAction({ email: data.email });
+      const result = await forgotPassword({ email: data.email });
       if (result.error) {
         toast.error(result.error);
         return;
       }
       setSubmitted(true);
+      setTimeLeft(RESEND_SECONDS);
       setTrials((t) => t + 1);
-      startTimer();
     } catch {
       toast.error(
         'No internet connection. Please check your network and try again.'
@@ -85,7 +75,7 @@ export function ForgotPasswordForm() {
     return `${m}:${s}`;
   };
 
-  const submitDisabled = isSubmitting || timeLeft > 0 || trials >= MAX_TRIALS;
+  const submitDisabled = isPending || timeLeft > 0 || trials >= MAX_TRIALS;
 
   return (
     <form
@@ -101,17 +91,8 @@ export function ForgotPasswordForm() {
         {...register('email')}
         endIcon={<EmailIcon width={20} height={20} />}
       />
-      {/* {serverError && (
-        <p
-          role="alert"
-          aria-live="assertive"
-          className="text-sm text-error text-center"
-        >
-          {serverError}
-        </p>
-      )} */}
       <Button type="submit" variant="primary" disabled={submitDisabled}>
-        {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+        {isPending ? 'Sending...' : 'Send Reset Link'}
       </Button>
       <div className="flex justify-center">
         <Link

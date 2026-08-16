@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
-import { resetPasswordAction } from '@/app/actions/auth/resetPassword';
+import { useResetPassword } from './hooks/Useresetpassword ';
 import EyeIcon from '@/assets/icons/eye.svg';
 import EyeOffIcon from '@/assets/icons/eyeoff.svg';
 import CheckIcon from '@/assets/icons/CheckIcon.svg';
@@ -55,15 +55,15 @@ interface Props {
 
 export function ResetPasswordForm({ accessToken }: Props) {
   const router = useRouter();
-  // const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { mutateAsync: resetPassword, isPending } = useResetPassword();
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(schema),
     mode: 'onTouched',
@@ -77,7 +77,7 @@ export function ResetPasswordForm({ accessToken }: Props) {
 
   const onSubmit = async (data: FormSchema) => {
     try {
-      const result = await resetPasswordAction({
+      const result = await resetPassword({
         password: data.password,
         accessToken,
       });
@@ -166,8 +166,8 @@ export function ResetPasswordForm({ accessToken }: Props) {
           })}
         </div>
       </div>
-      <Button type="submit" variant="primary" disabled={isSubmitting}>
-        {isSubmitting ? 'Updating…' : 'Update Password'}
+      <Button type="submit" variant="primary" disabled={isPending}>
+        {isPending ? 'Updating…' : 'Update Password'}
       </Button>
 
       <div className="flex justify-center">

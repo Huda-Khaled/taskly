@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
 import Logo from '@/app/components/ui/Logo/Logo';
@@ -13,7 +12,7 @@ import MembersIcon from '@/assets/icons/Members.svg';
 import DetailsIcon from '@/assets/icons/Details.svg';
 import ArrowIcon from '@/assets/icons/arrow.svg';
 import LogoutIcon from '@/assets/icons/logout.svg';
-import { logoutAction } from '@/app/actions/auth/logout';
+import { useLogout } from '@/app/components/features/auth/hooks/useLogout';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -62,10 +61,8 @@ export function Sidebar({
   const projectId =
     typeof params?.projectId === 'string' ? params.projectId : undefined;
 
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const logoutMutation = useLogout();
 
-  // 🆕 بيتعامل مع النوعين: global items ليها href ثابت، project items بتتبني
   function buildHref(item: NavItem) {
     if (item.global) return item.href;
     if (!projectId) return '/project';
@@ -74,21 +71,8 @@ export function Sidebar({
 
   const visibleItems = NAV_ITEMS.filter((item) => item.global || projectId);
 
-  async function handleLogout() {
-    setIsLoggingOut(true);
-    setLogoutError(null);
-
-    try {
-      const result = await logoutAction();
-
-      if (result?.error) {
-        setLogoutError(result.error);
-      }
-    } catch {
-      setLogoutError('Something went wrong. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
-    }
+  function handleLogout() {
+    logoutMutation.mutate();
   }
 
   return (
@@ -102,14 +86,13 @@ export function Sidebar({
       )}
 
       <aside
-        className={`h-full fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-surface-low transition-all duration-200 lg:static lg:translate-x-0 ${
-          isCollapsed ? 'lg:w-20' : 'lg:w-60'
+        className={`h-full fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-surface-low transition-all duration-200 lg:static lg:translate-x-0 
+        ${ isCollapsed ? 'lg:w-20' : 'lg:w-60'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div
-          className={`flex h-16 shrink-0 items-center gap-2 px-4 ${
-            isCollapsed ? 'lg:justify-center' : ''
-          }`}
+          className={`flex h-16 shrink-0 items-center gap-2 px-4
+             ${isCollapsed ? 'lg:justify-center' : ''}`}
         >
           <Logo collapsed={isCollapsed} />
         </div>
@@ -119,7 +102,6 @@ export function Sidebar({
             const href = buildHref(item);
             const Icon = item.icon;
 
-            // 🆕 active state: exact match للـ global items، includes للـ project items
             const isActive = item.global
               ? pathname === item.href
               : pathname.includes(`/${item.segment}`);
@@ -129,11 +111,11 @@ export function Sidebar({
                 key={item.global ? item.href : item.segment}
                 href={href}
                 onClick={onCloseMobile}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-body-md transition-colors ${
-                  isActive
-                    ? 'bg-surface-low font-semibold text-primary'
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-body-md transition-colors 
+                  ${isActive
+                      ? 'bg-surface-low font-semibold text-primary'
                     : 'text-slate-mid hover:bg-white'
-                } ${isCollapsed ? 'lg:justify-center' : ''}`}
+                  } ${isCollapsed ? 'lg:justify-center' : ''}`}
               >
                 <Icon className="shrink-0" width={20} height={20} />
                 <span className={isCollapsed ? 'lg:hidden' : ''}>
@@ -152,9 +134,8 @@ export function Sidebar({
             className={`hidden lg:flex ${isCollapsed ? 'justify-center' : ''}`}
           >
             <ArrowIcon
-              className={`transition-transform ${
-                isCollapsed ? 'rotate-180' : ''
-              }`}
+              className={`transition-transform ${isCollapsed ? 'rotate-180' : ''
+                }`}
             />
             <span className={isCollapsed ? 'hidden' : ''}>Collapse</span>
           </Button>
@@ -162,22 +143,21 @@ export function Sidebar({
           <Button
             variant="sidebar-danger"
             onClick={handleLogout}
-            disabled={isLoggingOut}
+            disabled={logoutMutation.isPending}
             className={isCollapsed ? 'lg:justify-center' : ''}
           >
             <LogoutIcon />
             <span className={isCollapsed ? 'lg:hidden' : ''}>
-              {isLoggingOut ? 'Logging out…' : 'Logout'}
+              {logoutMutation.isPending ? 'Logging out…' : 'Logout'}
             </span>
           </Button>
 
-          {logoutError && (
+          {logoutMutation.error && (
             <p
-              className={`px-3 text-label-sm text-error ${
-                isCollapsed ? 'lg:hidden' : ''
-              }`}
+              className={`px-3 text-label-sm text-error 
+                ${isCollapsed ? 'lg:hidden' : ''}`}
             >
-              {logoutError}
+              {logoutMutation.error.message}
             </p>
           )}
         </div>

@@ -16,11 +16,16 @@ export default function RootPage() {
 
     if (type === 'recovery' && accessToken) {
       router.replace(
-        `/reset-password#access_token=${accessToken}&type=recovery`
+        `/reset-password#access_token=${encodeURIComponent(
+          accessToken
+        )}&type=recovery`
       );
     } else if (error) {
+      const description = errorDescription
+        ? `&error_description=${encodeURIComponent(errorDescription)}`
+        : '';
       router.replace(
-        `/reset-password#error=${error}&error_description=${errorDescription}`
+        `/reset-password#error=${encodeURIComponent(error)}${description}`
       );
     } else {
       const token = document.cookie

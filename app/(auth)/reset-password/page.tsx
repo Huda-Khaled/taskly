@@ -32,6 +32,9 @@ export default function ResetPasswordPage() {
     const type = params.get('type');
     const errorParam = params.get('error');
     const errorDescription = params.get('error_description');
+    if (hash) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
 
     if (errorParam) {
       dispatch({

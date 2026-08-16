@@ -10,22 +10,22 @@ import { signUpSchema, type SignUpSchema } from '@/app/lib/validations/auth';
 import { Input } from '@/app/components/ui/Input/Input';
 import { Button } from '@/app/components/ui/Button/Button';
 import { PasswordChecklist } from '@/app/components/ui/PasswordChecklist/PasswordChecklist';
-import { signUpAction } from '@/app/actions/auth/signup';
+import { useSignup } from './hooks/useSignup';
 import EyeIcon from '@/assets/icons/eye.svg';
 import EyeOffIcon from '@/assets/icons/eyeoff.svg';
 import Link from 'next/link';
 
 export function SignUpForm() {
   const router = useRouter();
-  // const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { mutateAsync: signUp, isPending } = useSignup();
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<SignUpSchema>({
     resolver: zodResolver(signUpSchema),
     mode: 'onTouched',
@@ -39,7 +39,7 @@ export function SignUpForm() {
 
   const onSubmit = async (data: SignUpSchema) => {
     try {
-      const result = await signUpAction({
+      const result = await signUp({
         email: data.email,
         password: data.password,
         name: data.name,
@@ -146,19 +146,9 @@ export function SignUpForm() {
       <div id="password-rules" aria-live="polite">
         <PasswordChecklist password={passwordValue} />
       </div>
-      {/* 
-      {serverError && (
-        <p
-          role="alert"
-          aria-live="assertive"
-          className="text-sm text-error text-center"
-        >
-          {serverError}
-        </p>
-      )} */}
 
-      <Button type="submit" variant="primary" disabled={isSubmitting}>
-        {isSubmitting ? 'Creating account...' : 'Create Account'}
+      <Button type="submit" variant="primary" disabled={isPending}>
+        {isPending ? 'Creating account...' : 'Create Account'}
       </Button>
 
       <p className="text-center text-slate-mid">
